@@ -29,11 +29,10 @@ async def sql_read_two():
     return cur.execute('SELECT * FROM clients').fetchall()
 
 
-async def sql_read_only_one(state, message):
+async def sql_read_only_one(state):
     async with state.proxy() as data:
-        for ret in cur.execute("SELECT * FROM clients WHERE client_id == ?", tuple(data.values())).fetchall():
-            await bot.send_message(message.from_user.id,
-                                   f'ID: {ret[0]}\nName: {ret[1]}\nPhone number: {ret[2]}\nTimezone: {ret[3]}\nComment: {ret[-1]}')
+        cur.execute("SELECT * FROM clients WHERE client_id == ?", (data,)).fetchone()
+        base.commit()
 
 
 async def sql_delete_command(data):
@@ -44,3 +43,4 @@ async def sql_delete_command(data):
 async def delete_all_data():
     cur.execute('DROP TABLE IF EXISTS clients')
     base.commit()
+

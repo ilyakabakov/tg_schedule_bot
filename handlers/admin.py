@@ -8,18 +8,18 @@ from database import sqlite_db
 from database.sqlite_db import delete_all_data
 from keyboards import admin_kb
 
-"""check on admin"""
+""" Check on admin """
 ID = None
 
 
 async def director_test(message: types.Message):
     global ID
     ID = message.from_user.id
-    await bot.send_message(message.from_user.id, 'Я к вашим услугам', reply_markup=admin_kb.button_case_a)
+    await bot.send_message(message.from_user.id, "Hello! What do you want?", reply_markup=admin_kb.button_case_a)
     await message.delete()
 
 
-"""delete one item"""
+""" Delete one item in database """
 
 
 async def del_callback_run(callback_query: types.CallbackQuery):
@@ -49,26 +49,27 @@ async def open_all(message: types.Message):
         await sqlite_db.sql_read(message)
 
 
-"""Входим в режим машины состояний"""
+""" Входим в режим машины состояний """
 
 
 class FSMAdmin(StatesGroup):
     client_id = State()
+
 
 # Doesn't work now
 @dp.message_handler(commands='Open_one')
 async def open_one(message: types.Message):
     if message.from_user.id == ID:
         await FSMAdmin.client_id.set()
-        await message.reply('Text me client_ID')  # TODO: catch answer and send return
+        await message.reply('Text me client_ID')  # TODO: catch answer and send for db, and return answer of query from db
+        await FSMAdmin.next()
 
 
 async def open_client(message: types.Message, state: FSMContext):
     if message.from_user.id == ID:
         async with state.proxy() as data:
             data['client_id'] = int(message.text)
-        await message.reply('Вот данные:')
-        await sql_read_only_one(state, message.text)
+        await sql_read_only_one(state)
         await state.finish()
 
 
@@ -80,4 +81,4 @@ def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(open_all, commands='Open_db')
     # dp.register_callback_query_handler(open_one, Text(startswith='/Open_one'), state=None)
     # dp.register_message_handler(open_one, commands='Open_one')
-    dp.message_handler(open_client, content_types=['client_id'], state=FSMAdmin.client_id)
+    dp.register_message_handler(open_client, content_types=['client_id'], state=FSMAdmin.client_id)
