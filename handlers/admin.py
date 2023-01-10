@@ -8,21 +8,19 @@ from database import sqlite_db
 from database.sqlite_db import delete_all_data
 from keyboards import admin_kb
 
-""" Check on admin """
 ID = None
 
 
 async def director_test(message: types.Message):
+    """ Check on admin """
     global ID
     ID = message.from_user.id
     await bot.send_message(message.from_user.id, "Hello! What do you want?", reply_markup=admin_kb.button_case_a)
     await message.delete()
 
 
-""" Delete one item in database """
-
-
 async def del_callback_run(callback_query: types.CallbackQuery):
+    """ Delete one item in database """
     await sqlite_db.sql_delete_command(callback_query.data.replace('del ', ''))
     await callback_query.answer(text=f'{callback_query.data.replace("del ", "")} was deleted!', show_alert=True)
 
@@ -49,10 +47,8 @@ async def open_all(message: types.Message):
         await sqlite_db.sql_read(message)
 
 
-""" Входим в режим машины состояний """
-
-
 class FSMAdmin(StatesGroup):
+    """ Входим в режим машины состояний """
     client_id = State()
 
 
@@ -61,16 +57,20 @@ class FSMAdmin(StatesGroup):
 async def open_one(message: types.Message):
     if message.from_user.id == ID:
         await FSMAdmin.client_id.set()
-        await message.reply('Text me client_ID')  # TODO: catch answer and send for db, and return answer of query from db
+        await message.reply(
+            'Text me client_ID')  # TODO: catch answer and send for db, and return answer of query from db
         await FSMAdmin.next()
 
 
 async def open_client(message: types.Message, state: FSMContext):
     if message.from_user.id == ID:
         async with state.proxy() as data:
-            data['client_id'] = int(message.text)
+            data['client_id'] = message.text
         await sql_read_only_one(state)
         await state.finish()
+        for ret in sqlite_db.res:
+            await bot.send_message(message.from_user.id,
+                                   f'ID: {ret[0]}\nName: {ret[1]}\nPhone number: {ret[2]}\nTimezone: {ret[3]}\nComment: {ret[-1]}')
 
 
 def register_handlers_admin(dp: Dispatcher):

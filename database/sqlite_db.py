@@ -29,10 +29,15 @@ async def sql_read_two():
     return cur.execute('SELECT * FROM clients').fetchall()
 
 
+res = []
+
+
 async def sql_read_only_one(state):
+    global res
     async with state.proxy() as data:
-        cur.execute("SELECT * FROM clients WHERE client_id == ?", (data,)).fetchone()
+        res = cur.execute("SELECT * FROM clients WHERE client_id == ?", (data,)).fetchall()
         base.commit()
+        return res
 
 
 async def sql_delete_command(data):
@@ -43,4 +48,3 @@ async def sql_delete_command(data):
 async def delete_all_data():
     cur.execute('DROP TABLE IF EXISTS clients')
     base.commit()
-

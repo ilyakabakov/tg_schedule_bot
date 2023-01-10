@@ -3,12 +3,10 @@ from aiogram.utils import executor
 from handlers import client, admin, other
 from database import sqlite_db
 
-"""Bot started from here"""
-
 
 def if_started():
+    """Bot started from here"""
     print('Bot is ONLINE')
-    # database starter
     sqlite_db.sql_start()
 
 

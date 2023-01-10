@@ -1,6 +1,7 @@
+
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
-
+from aiogram.types import ParseMode
 import os
 from dotenv import load_dotenv, find_dotenv
 from create_bot import bot
@@ -15,31 +16,42 @@ load_dotenv(find_dotenv())
 
 async def command_start(message: types.Message):
     await bot.send_message(message.from_user.id,
-                           'Привет, я бот для записи к высококлассному психологу Лене Кабаковой! 😎',
-                           reply_markup=inline_kb)
+                           '<b>Приветствую! ✨\nЯ Бот для записи к КПТ и АСТ психологу '
+                           'Лене Кабаковой 🤩\n</b>',
+                           parse_mode=ParseMode.HTML)
+    await bot.send_message(message.from_user.id,
+                           'Здесь вы можете немного познакомиться с Леной, '
+                           'как специалистом, задать вопрос или записаться на сессию.\n\n'
+                           '🔸 Прямо сейчас\nЛена ведет прием только онлайн\n\n'
+                           'Но если вы из Батуми, не пропустите крутые и очень полезные'
+                           ' очные встречи: <b>@point_of_support</b> 😎',
+                           reply_markup=inline_kb,
+                           parse_mode=ParseMode.HTML)
 
 
 async def bio(callback: types.CallbackQuery):
     await callback.message.answer(read_from_file())
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Вернуться в меню</b>', reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 async def prices(callback: types.CallbackQuery):
     await callback.message.answer(read_price())
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Вернуться в меню</b>', reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 # REQUEST MENU
 async def show_menu(callback: types.CallbackQuery):
-    await callback.message.answer('Меню', reply_markup=inline_kb)
+    await callback.message.answer('<B>Меню</b>', reply_markup=inline_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 """ Заявка на консультацию """
 
-""" Входим в режим машины состояний """
-
 
 class FSMClient(StatesGroup):
+    """ Входим в режим машины состояний """
     name = State()
     phone = State()
     gmt = State()
@@ -48,102 +60,153 @@ class FSMClient(StatesGroup):
 
 async def writing_on_consult(callback: types.CallbackQuery):
     await FSMClient.name.set()
-    await callback.message.reply('Подача заявки состоит из четырех вопросов. '
-                                 '\nЕсли вы передумали, то достаточно написать "Отмена"')
-    await callback.message.reply('Шаг1. Напишите ваше имя')
-
-
-""" CANCEL state """
+    await callback.message.reply('Чтобы оставить заявку, ответьте, пожалуйста, на 4 вопроса.'
+                                 '\n⚠️ Если передумали, достаточно написать: отмена')
+    await callback.message.reply('Шаг 1.\n'
+                                 'Давайте немного познакомимся!☺️\n'
+                                 'Как Вас зовут?')
 
 
 async def cancel_handler(message: types.Message, state: FSMContext):
+    """ CANCEL state """
     current_state = await state.get_state()
     if current_state is None:
         return
     await state.finish()
-    await message.reply('OK. Ваша заявка отменена.')
-
-
-""" Catch name and write in table """
+    await message.reply('OK. Ваша заявка отменена. 😫')
 
 
 async def load_name(message: types.Message, state: FSMContext):
+    """ Catch name and write in table """
     async with state.proxy() as data:
         data['name'] = message.text
     await FSMClient.next()
-    await message.reply('Шаг2. Введите ваш номер телефона(Пример:8-912-345-67-89)')
-
-
-""" Catch a phone number """
+    await message.reply('Шаг 2.\nВведите Ваш номер телефона')
 
 
 async def load_phone(message: types.Message, state: FSMContext):
+    """ Catch a phone number """
     async with state.proxy() as data:
         data['phone_n'] = message.text
     await FSMClient.next()
-    await message.reply('Шаг3. Укажите город в котором вы проживаете')
-
-
-"""Catch a Timezone """
+    await message.reply('Шаг3.\nНапишите город, в котором вы проживаете. Или укажите часовой пояс.')
 
 
 async def load_gmt(message: types.Message, state: FSMContext):
+    """Catch a Timezone """
     async with state.proxy() as data:
         data['gmt'] = message.text
     await FSMClient.next()
-    await message.reply('Шаг4. Напишите ваш запрос с которым вы хотите обратиться')
-
-
-""" Catch a comment """
+    await message.reply('Шаг4.\nМожете коротко описать ваш запрос, с которым хотите обратиться.')
 
 
 async def load_comment(message: types.Message, state: FSMContext):
+    """ Catch a comment """
     async with state.proxy() as data:
         data['comment'] = message.text
     await sql_add_command(state)
     await state.finish()
-    if await message.answer('Спасибо! Ваша заявка принята, Лена скоро с вами свяжется!'):
+    if await message.answer('Спасибо! Ваша заявка принята.'
+                            ' Лена скоро с вами свяжется!😊'):
         await bot.send_message(chat_id=os.getenv('ID_NUM'),
-                               text='You have a new query! Please check the database!')
+                               text='You have a new query! 😊 '
+                                    'Please check the database!')
         await message.delete()
-    await message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await message.answer('<b>Вернуться в меню:</b>',
+                         reply_markup=inline_m_kb,
+                         parse_mode=ParseMode.HTML)
 
 
 """ FAQ """
 
 
 async def faq(callback: types.CallbackQuery):
-    await callback.message.reply('Часто задаваемые вопросы', reply_markup=inline_faq_kb)
+    await callback.message.reply('<b>Часто задаваемые вопросы</b>',
+                                 reply_markup=inline_faq_kb,
+                                 parse_mode=ParseMode.HTML)
 
 
 async def first_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>Как понять, что мне нужно к психологу?</b>',
+                                  parse_mode=ParseMode.HTML)
     await callback.message.answer(arr_j[0])
-    await callback.message.answer('Еще вопросы:', reply_markup=inline_faq_kb)
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 async def second_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>Как выбрать психолога?👍🏻</b>',
+                                  parse_mode=ParseMode.HTML)
     await callback.message.answer(arr_j[1])
-    await callback.message.answer('Еще вопросы:', reply_markup=inline_faq_kb)
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 async def third_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>С какими запросами я могу обратиться?</b>',
+                                  parse_mode=ParseMode.HTML)
     await callback.message.answer(arr_j[2])
-    await callback.message.answer('Еще вопросы:', reply_markup=inline_faq_kb)
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 async def four_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>Как проходит сессия?</b>', parse_mode=ParseMode.HTML)
     await callback.message.answer(arr_j[3])
-    await callback.message.answer('Еще вопросы:', reply_markup=inline_faq_kb)
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 async def five_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>Как часто нужно встречаться?</b>',
+                                  parse_mode=ParseMode.HTML)
     await callback.message.answer(arr_j[4])
-    await callback.message.answer('Еще вопросы:', reply_markup=inline_faq_kb)
-    await callback.message.answer('Вернуться в меню', reply_markup=inline_m_kb)
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
+
+
+async def six_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>Сколько нужно сессий, для результата?</b>',
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer(arr_j[5])
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
+
+
+async def seven_query(callback: types.CallbackQuery):
+    await callback.message.answer('<b>Психолог, психотерапевт и психиатр - в чем отличия?</b>',
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer(arr_j[6])
+    await callback.message.answer('<b>Еще вопросы:</b>',
+                                  reply_markup=inline_faq_kb,
+                                  parse_mode=ParseMode.HTML)
+    await callback.message.answer('<b>Вернуться в меню</b>',
+                                  reply_markup=inline_m_kb,
+                                  parse_mode=ParseMode.HTML)
 
 
 def register_handlers_client(dp: Dispatcher):
@@ -168,3 +231,5 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_callback_query_handler(third_query, Text(startswith='/third_query'))
     dp.register_callback_query_handler(four_query, Text(startswith='/four_query'))
     dp.register_callback_query_handler(five_query, Text(startswith='/five_query'))
+    dp.register_callback_query_handler(six_query, Text(startswith='/six_query'))
+    dp.register_callback_query_handler(seven_query, Text(startswith='/seven_query'))
