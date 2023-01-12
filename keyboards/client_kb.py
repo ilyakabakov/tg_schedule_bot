@@ -1,5 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 
 """ Keyboard_menu_button """
 inline_m_kb = InlineKeyboardMarkup(row_width=1)
@@ -14,7 +13,8 @@ faq_bttns = [InlineKeyboardButton(text='Как выбрать психолога
              InlineKeyboardButton(text='Как проходит сессия?', callback_data='/four_query'),
              InlineKeyboardButton(text='Как часто нужно встречаться?', callback_data='/five_query'),
              InlineKeyboardButton(text='Сколько нужно сессий,\n для результата?', callback_data='/six_query'),
-             InlineKeyboardButton(text='Психолог и психиатр - в чем отличия?', callback_data='/seven_query')
+             InlineKeyboardButton(text='Психолог и психиатр - в чем отличия?', callback_data='/seven_query'),
+             InlineKeyboardButton(text='Задать свой вопрос', callback_data='/question')
              ]
 inline_faq_kb.add(faq_b1).add(*faq_bttns)
 
