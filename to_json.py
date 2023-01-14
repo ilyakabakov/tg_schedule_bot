@@ -1,5 +1,6 @@
 import json
 
+
 arr = []
 
 """ CENSURE MODULE """
@@ -28,11 +29,13 @@ for query in data_j:
 def read_from_file():
     with open('bio.txt', 'r', encoding='utf8') as f:
         data = f.read()
-
-    return str(data)
+        return str(data)
 
 
 def read_price():
     with open('price.txt', 'r', encoding='utf8') as f:
         data = f.read()
     return str(data)
+
+
+

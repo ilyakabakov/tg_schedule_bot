@@ -16,7 +16,7 @@ faq_bttns = [InlineKeyboardButton(text='Как выбрать психолога
              InlineKeyboardButton(text='Психолог и психиатр - в чем отличия?', callback_data='/seven_query'),
              InlineKeyboardButton(text='Задать свой вопрос', callback_data='/question')
              ]
-inline_faq_kb.add(faq_b1).add(*faq_bttns)
+inline_faq_kb.add(faq_b1).add(*faq_bttns).add(menu_bttn)
 
 """ Inline keyboard part """
 inline_kb = InlineKeyboardMarkup(row_width=1)

@@ -12,6 +12,7 @@ ID = None
 
 async def director_test(message: types.Message):
     """ Check on admin """
+
     global ID
     ID = message.from_user.id
     await bot.send_message(message.from_user.id, "Hello! What do you want?", reply_markup=admin_kb.button_case_a)
@@ -20,6 +21,7 @@ async def director_test(message: types.Message):
 
 async def del_callback_run(callback_query: types.CallbackQuery):
     """ Delete one item in database """
+
     await sqlite_db.sql_delete_command(callback_query.data.replace('del ', ''))
     await callback_query.answer(text=f'{callback_query.data.replace("del ", "")} was deleted!', show_alert=True)
 
@@ -35,14 +37,14 @@ async def delete_item(message: types.Message):
                                    f'GMT: {ret[3]}\n'
                                    f'Query: {ret[-1]}')
             await bot.send_message(message.from_user.id, text='^^^',
-                                   reply_markup=InlineKeyboardMarkup(). \
-                                   add(
+                                   reply_markup=InlineKeyboardMarkup().add(
                                        InlineKeyboardButton(f'DELETE: {ret[0]}, {ret[1]}',
                                                             callback_data=f'del {ret[0]}')))
 
 
 async def del_callback_run_q(callback_query: types.CallbackQuery):
     """ Delete one item in database """
+
     await sqlite_db.sql_delete_command_q(callback_query.data.replace('dlt ', ''))
     await callback_query.answer(text=f'{callback_query.data.replace("dlt ", "")} was deleted!', show_alert=True)
 
@@ -57,8 +59,7 @@ async def delete_question(message: types.Message):
                                    f'Номер телефона: {ret[3]}\n'
                                    f'Вопрос: {ret[1]}\n')
             await bot.send_message(message.from_user.id, text='^^^',
-                                   reply_markup=InlineKeyboardMarkup(). \
-                                   add(
+                                   reply_markup=InlineKeyboardMarkup().add(
                                        InlineKeyboardButton(f'DELETE: {ret[0]}, {ret[1]}',
                                                             callback_data=f'dlt {ret[0]}')))
 
@@ -77,9 +78,6 @@ async def open_all(message: types.Message):
 async def open_questions_db(message: types.Message):
     if message.from_user.id == ID:
         await sql_read_questions(message)
-
-
-
 
 
 def register_handlers_admin(dp: Dispatcher):
