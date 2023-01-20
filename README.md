@@ -1,13 +1,16 @@
 # tg_shedule_bot.
 # This project for my wife, she is a psychologist.
 In project I used Python 3.10, aoigram framework, json, SQLite3
-Specification for Bot:
+
+- Specifications for Bot:
     - Write new "Submitting application for a consultation" in database
-    - Have a FAQ section
+    - Have a FAQ section 
     - Write new questions from FAQ section
     - Read information from database
+    - Show information from database to admin
     - Read "bio" and "prices" from .txt(Don't ask 😅 it's wife's request)
-    - Show biography info
+    - Show biography info to client
+    - Delete messages with obscene words in chat, where bot is admin and in private messages.  
      
 Now all requests work.
     - Added new section with events information
