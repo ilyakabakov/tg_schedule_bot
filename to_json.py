@@ -36,6 +36,3 @@ def read_price():
     with open('price.txt', 'r', encoding='utf8') as f:
         data = f.read()
     return str(data)
-
-
-
