@@ -1,5 +1,5 @@
-    # tg_shedule_bot.
-    # This project for my wife, she is a psychologist.
+# tg_shedule_bot.
+# This project for my wife, she is a psychologist.
 In project I used Python 3.10, aoigram framework, json, SQLite3
 Specification for Bot:
     - Write new "Submitting application for a consultation" in database
