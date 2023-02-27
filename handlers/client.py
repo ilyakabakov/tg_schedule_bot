@@ -188,6 +188,16 @@ async def second_query(callback: types.CallbackQuery):
                                   reply_markup=inline_faq_kb)
 
 
+async def eight_query(callback: types.CallbackQuery):
+    if inline_m_kb or inline_kb:
+        await callback.message.delete()
+    await callback.message.answer(f'<b>🔶 Что такое КПТ и ACT?</b>\n\n'
+                                  f'{arr_j[8]}\n\n'
+                                  f'<b>Еще вопросы:</b>',
+                                  parse_mode=ParseMode.HTML,
+                                  reply_markup=inline_faq_kb)
+
+
 async def third_query(callback: types.CallbackQuery):
     if inline_m_kb or inline_kb:
         await callback.message.delete()
@@ -411,6 +421,7 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_callback_query_handler(five_query, Text(startswith='/five_query'))
     dp.register_callback_query_handler(six_query, Text(startswith='/six_query'))
     dp.register_callback_query_handler(seven_query, Text(startswith='/seven_query'))
+    dp.register_callback_query_handler(eight_query, Text(startswith='/eight_query'))
 
     '''FAQ send a question handlers'''
 

@@ -9,6 +9,7 @@ inline_m_kb.add(menu_bttn)
 inline_faq_kb = InlineKeyboardMarkup(row_width=1)
 faq_b1 = InlineKeyboardButton(text="Как понять, что\n мне нужно к психологу?", callback_data='/first_query')
 faq_bttns = [InlineKeyboardButton(text='Как выбрать психолога?👍🏻', callback_data='/second_query'),
+             InlineKeyboardButton(text='Что такое КПТ и ACT?', callback_data='/eight_query'),
              InlineKeyboardButton(text='С какими запросами я могу обратиться?', callback_data='/third_query'),
              InlineKeyboardButton(text='Как проходит терапия?', callback_data='/four_query'),
              InlineKeyboardButton(text='Как часто нужно встречаться?', callback_data='/five_query'),
