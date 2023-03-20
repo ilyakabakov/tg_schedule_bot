@@ -2,6 +2,9 @@
 # This project for my wife, she is a psychologist.
 In project I used Python 3.10, aoigram framework, json, SQLite3
 
+Project in Telegram App:
+@kabakova_psy_bot
+
 - Specifications for Bot:
     - Write new "Submitting application for a consultation" in database
     - Have a FAQ section 
