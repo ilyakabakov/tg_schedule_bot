@@ -26,7 +26,7 @@ How to install:
     - aiogram (version v2.24)
     - python-dotenv(v0.21.0)
 - Put it in the root directory:
-    - .env(this file should contain telegram TOKEN and ID_NUM(Telegram user id the bot owner))
+    - .env(this file should contain fields TOKEN=your_telegram_token and ID_NUM=telegram_user_id_owner_of_bot)
 - The SQL database will be created at the first bot started
 - Put it in the database folder:
     - cens.txt(a file with obscene words, when bot starts it will be converted in .json)
