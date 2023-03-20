@@ -25,13 +25,13 @@ How to install:
     - python 3.10
     - aiogram (version v2.24)
     - python-dotenv(v0.21.0)
-- Put it in the root directory:
+- Put(Create) files it in the bot's root directory:
     - .env(this file should contain fields TOKEN=your_telegram_token and ID_NUM=telegram_user_id_owner_of_bot)
 - The SQL database will be created at the first bot started
-- Put it in the database folder:
+- Put(Create) files it in the database folder:
     - cens.txt(a file with obscene words, when bot starts it will be converted in .json)
     - master.json(Contain questions dict, bio and prices)
-- Json file structure: {"key": {"queries": [value]},...}
+        - Json file structure: {"key": {"queries": [value]},...}
 
 
 # In future, i want todo google calendar integration, even though my wife is against it 😅
