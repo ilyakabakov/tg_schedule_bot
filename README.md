@@ -14,9 +14,11 @@ Project in Telegram App:
     - Read "bio", "prices" and FAQ part from .json
     - Show biography info to client
     - Delete messages with obscene words in chat, where bot is admin and in private messages.  
-     
+    
 Now all requests work.
     - Added new section with events information
+    
+!The main logic of the bot in the handlers folder
 
 How to install:
 - You needed Installed packages:
