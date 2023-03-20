@@ -1,17 +1,19 @@
-from aiogram import types, Dispatcher
-from aiogram.dispatcher import FSMContext
-from aiogram.types import ParseMode
 import os
 
-from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToDeleteNotFound
-from dotenv import load_dotenv, find_dotenv
-from create_bot import bot
-from database.sqlite_db import sql_add_command, sql_add_command2, sql_read_events, sql_add_command_meeting
-from keyboards.client_kb import inline_kb, inline_faq_kb, inline_m_kb, meeting_kb
+from aiogram import types, Dispatcher
+from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from to_json import read_from_file, read_price, arr_j
+from aiogram.types import ParseMode
+from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToDeleteNotFound
+
+from create_bot import bot
 from contextlib import suppress
+from dotenv import load_dotenv, find_dotenv
+from database.sqlite_db import sql_add_command, sql_add_command2, sql_read_events, sql_add_command_meeting
+from keyboards.client_kb import inline_kb, inline_faq_kb, inline_m_kb, meeting_kb
+from converter_from_json import array_json
+
 
 load_dotenv(find_dotenv())
 
@@ -22,47 +24,67 @@ async def command_start(message: types.Message):
         if message.from_user.id >= 1:
             with suppress(MessageCantBeDeleted, MessageToDeleteNotFound):
                 await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
-        await bot.send_message(message.from_user.id,
-                               '<b>Приветствую! ✨\nЯ Бот для записи к КПТ и АСТ психологу '
-                               'Лене Кабаковой 🤩\n\n</b>'
-                               'Здесь вы можете немного познакомиться с Леной, '
-                               'как специалистом, задать вопрос или записаться на сессию.\n\n'
-                               '🔸 Прямо сейчас\nЛена ведет прием только онлайн\n\n'
-                               'Но если вы из Батуми, не пропустите крутые и полезные'
-                               ' тематические встречи: <b>@point_of_support</b> 😎',
-                               reply_markup=inline_kb,
-                               parse_mode=ParseMode.HTML)
+        await bot.send_message(
+            message.from_user.id,
+            '<b>Приветствую! ✨\nЯ Бот для записи к КПТ и АСТ психологу '
+            'Лене Кабаковой 🤩\n\n</b>'
+            'Здесь вы можете немного познакомиться с Леной, '
+            'как специалистом, задать вопрос или записаться на сессию.\n\n'
+            '🔸 Прямо сейчас\nЛена ведет прием только онлайн\n\n'
+            'Но если вы из Батуми, не пропустите крутые и полезные'
+            ' тематические встречи: <b>@point_of_support</b> 😎',
+            reply_markup=inline_kb,
+            parse_mode=ParseMode.HTML)
     except Exception as ex:
         print(ex)
 
 
-async def bio(callback: types.CallbackQuery):
+async def delete_message(message):
+    """ Anti-flood func. This function for deleting previous message. """
     if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'{read_from_file()}\n\n'
-                                  f'<b>Вернуться в меню</b>',
-                                  reply_markup=inline_m_kb,
-                                  parse_mode=ParseMode.HTML)
+        await message.delete()
+
+
+async def bio(callback: types.CallbackQuery):
+    await delete_message(callback.message)
+    await send_message_with_parse_mode(
+        callback.message,
+        f'{array_json[9]}\n\n'
+        f'<b>Вернуться в меню:</b>',
+        reply_markup=inline_m_kb)
 
 
 async def prices(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'{read_price()}\n\n'
-                                  f'<b>Вернуться в меню</b>',
-                                  reply_markup=inline_m_kb,
-                                  parse_mode=ParseMode.HTML)
+    await delete_message(callback.message)
+    await send_message_with_parse_mode(
+        callback.message,
+        f'{array_json[10]}\n\n'
+        f'<b>Вернуться в меню:</b>',
+        reply_markup=inline_m_kb)
 
 
-# REQUEST MENU
+""" REQUEST MENU """
+
+
 async def show_menu(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer('<B>Меню</b>', reply_markup=inline_kb,
-                                  parse_mode=ParseMode.HTML)
+    await delete_message(callback.message)
+    await send_message_with_parse_mode(
+        callback.message,
+        '<B>Меню</b>', reply_markup=inline_kb)
 
 
-""" Заявка на консультацию """
+def sanitize_text(text: str) -> str:
+    """ Remove invalid characters for the writing in db"""
+    return text.replace("<", "").replace(">", "").replace("%", "")
+
+
+async def send_message_with_parse_mode(message: types.Message, text: str, reply_markup=None, parse_mode=ParseMode.HTML):
+    """ Send a message with specified text, reply markup and parse mode """
+
+    await message.answer(text, reply_markup=reply_markup, parse_mode=parse_mode)
+
+
+""" Apply for a consultation """
 
 
 class FSMClient(StatesGroup):
@@ -75,27 +97,32 @@ class FSMClient(StatesGroup):
 
 
 async def writing_on_consult(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
+    await delete_message(callback.message)
     await FSMClient.name.set()
-    await callback.message.answer('Чтобы оставить заявку, ответьте, пожалуйста, на 4 вопроса.'
-                                  '\n⚠️ Если передумали, достаточно написать: <b>отмена</b>\n\n'
-                                  'Шаг 1.\n'
-                                  'Давайте немного познакомимся!☺️\n'
-                                  '<b>Как Вас зовут?</b>', parse_mode=ParseMode.HTML)
+    await send_message_with_parse_mode(
+        callback.message,
+        'Чтобы оставить заявку, ответьте, пожалуйста, на 4 вопроса.'
+        '\n⚠️ Если передумали, достаточно написать: <b>отмена</b>\n\n'
+        'Шаг 1.\n'
+        'Давайте немного познакомимся!☺️\n'
+        '<b>Как Вас зовут?</b>')
 
 
 async def cancel_handler(message: types.Message, state: FSMContext):
-    """ CANCEL state """
+    """ CANCEL state. One Cancel state working for all state machines! """
 
     await message.delete()
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     current_state = await state.get_state()
     if current_state is None:
         return
     await state.finish()
-    await message.answer('OK. Ваша заявка отменена. 👍🏻', reply_markup=inline_m_kb)
+    await message.answer(
+        'OK. Ваша заявка отменена. 👍🏻',
+        reply_markup=inline_m_kb)
 
 
 async def load_name(message: types.Message, state: FSMContext):
@@ -103,12 +130,15 @@ async def load_name(message: types.Message, state: FSMContext):
 
     await message.delete()
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
 
     async with state.proxy() as data:
-        data['name'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['name'] = sanitize_text(message.text)
     await FSMClient.next()
-    await message.answer('Шаг 2.\nВведите Ваш номер телефона')
+    await message.answer(
+        'Шаг 2.\nВведите Ваш номер телефона')
 
 
 async def load_phone(message: types.Message, state: FSMContext):
@@ -116,11 +146,15 @@ async def load_phone(message: types.Message, state: FSMContext):
 
     await message.delete()
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['phone_n'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['phone_n'] = sanitize_text(message.text)
     await FSMClient.next()
-    await message.answer('Шаг3.\nНапишите город, в котором вы проживаете. Или укажите часовой пояс.')
+    await message.answer(
+        'Шаг3.\nНапишите город, в котором вы проживаете.'
+        ' Или укажите часовой пояс.')
 
 
 async def load_gmt(message: types.Message, state: FSMContext):
@@ -128,32 +162,38 @@ async def load_gmt(message: types.Message, state: FSMContext):
 
     await message.delete()
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['gmt'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['gmt'] = sanitize_text(message.text)
     await FSMClient.next()
-    await message.answer('Шаг4.\nМожете коротко описать ваш запрос,\n'
-                         ' с которым хотите обратиться.')
+    await message.answer(
+        'Шаг4.\nМожете коротко описать ваш запрос,\n'
+        ' с которым хотите обратиться.')
 
 
 async def load_comment(message: types.Message, state: FSMContext):
     """ Catch a comment """
 
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['comment'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['comment'] = sanitize_text(message.text)
     await sql_add_command(state)
     await state.finish()
-    if await message.answer(f'Спасибо! Ваша заявка принята.\n'
-                            ' Лена скоро с вами свяжется!😊\n\n'
-                            '<b>Вернуться в меню:</b>',
-                            reply_markup=inline_m_kb,
-                            parse_mode=ParseMode.HTML
-                            ):
-        await bot.send_message(chat_id=os.getenv('ID_NUM'),
-                               text='You have a new query! 😊 '
-                                    'Please check the database!')
+    if await send_message_with_parse_mode(
+            message,
+            f'Спасибо! Ваша заявка принята.\n'
+            ' Лена скоро с вами свяжется!😊\n\n'
+            '<b>Вернуться в меню:</b>',
+            reply_markup=inline_m_kb):
+        await bot.send_message(
+            chat_id=os.getenv('ID_NUM'),
+            text='You have a new query! 😊 '
+                 'Please check the database!')
         await message.delete()
 
 
@@ -161,167 +201,150 @@ async def load_comment(message: types.Message, state: FSMContext):
 
 
 async def faq(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer('<b>🔶 Часто задаваемые вопросы</b>',
-                                  reply_markup=inline_faq_kb,
-                                  parse_mode=ParseMode.HTML)
+    await delete_message(callback.message)
+    await send_message_with_parse_mode(
+        callback.message,
+        '<b>🔶 Часто задаваемые вопросы</b>',
+        reply_markup=inline_faq_kb)
 
 
 async def first_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Как понять, что мне нужно к психологу?</b>\n\n'
-                                  f'{arr_j[0]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[0],
+        '🔶 Как понять, что мне нужно к психологу?')
 
 
 async def second_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Как выбрать психолога?👍🏻</b>\n\n'
-                                  f'{arr_j[1]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[1],
+        '🔶 Как выбрать психолога?👍🏻')
 
 
 async def eight_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Что такое КПТ и ACT?</b>\n\n'
-                                  f'{arr_j[8]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[8],
+        '🔶 Что такое КПТ и ACT?')
 
 
 async def third_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 С какими запросами я могу обратиться?</b>\n\n'
-                                  f'{arr_j[2]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[2],
+        '🔶 С какими запросами я могу обратиться?')
 
 
 async def four_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Как проходит терапия?</b>\n\n'
-                                  f'{arr_j[3]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[3],
+        '🔶 Как проходит терапия?')
 
 
 async def five_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Как часто нужно встречаться?</b>\n\n'
-                                  f'{arr_j[4]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[4],
+        '🔶 Как часто нужно встречаться?')
 
 
 async def six_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Сколько нужно сессий, для результата?</b>\n\n'
-                                  f'{arr_j[5]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[5],
+        '🔶 Сколько нужно сессий, для результата?')
 
 
 async def seven_query(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Психолог, психотерапевт и психиатр - в чем отличия?</b>\n\n'
-                                  f'{arr_j[6]}\n\n'
-                                  f'<b>Еще вопросы:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=inline_faq_kb)
+    await delete_message(callback.message)
+    await send_faq_response(
+        callback.message, array_json[6],
+        '🔶 Психолог, психотерапевт и психиатр - в чем отличия?')
+
+
+async def send_faq_response(message, response_text, header_text):
+    await message.answer(f'<b>{header_text}</b>\n\n'
+                         f'{response_text}\n\n'
+                         f'<b>Еще вопросы:</b>',
+                         parse_mode=ParseMode.HTML,
+                         reply_markup=inline_faq_kb)
 
 
 """Send Your Question part"""
 
 
 class FormQuestion(StatesGroup):
-    """ Start the StatesMachine """
+    """ Start the State Machine """
     question = State()
     name = State()
     phone_n = State()
 
 
 async def send_question(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
+    """ Start the form by asking the user to enter their question """
+    await delete_message(callback.message)
+
     await FormQuestion.question.set()
-    await callback.message.answer('🔶 Напишите свой вопрос\n'
-                                  ' и Лена ответит вам в ближайшее время.\n\n'
-                                  '⚠️ Или напишите: <b>отмена</b>', parse_mode=ParseMode.HTML)
 
-
-async def cancel_state(message: types.Message, state: FSMContext):
-    """ Cancel states """
-
-    await message.delete()
-    if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
-    cur_state = await state.get_state()
-    if cur_state is None:
-        return
-    await state.finish()
-    await message.reply('OK. 👍🏻', reply_markup=inline_m_kb)
+    await send_message_with_parse_mode(
+        callback.message,
+        '🔶 Напишите свой вопрос\n'
+        ' и Лена ответит вам в ближайшее время.\n\n'
+        '⚠️ Или напишите: <b>отмена</b>')
 
 
 async def load_question(message: types.Message, state: FSMContext):
-    """ Catch a first state """
+    """ Load the user's question and move to the next state """
 
-    await message.delete()
+    await delete_message(message)
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['question'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['question'] = sanitize_text(message.text)
 
     await FormQuestion.next()
     await message.answer('Напишите свое имя:')
 
 
 async def load_name2(message: types.Message, state: FSMContext):
-    """ Catch a second state """
+    """ Load the user's name and move to the next state """
 
-    await message.delete()
+    await delete_message(message)
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['name'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['name'] = sanitize_text(message.text)
 
     await FormQuestion.next()
     await message.answer('Укажите ваш номер телефона:')
 
 
-async def load_phone_n(message: types.Message, state: FSMContext):
-    """ Catch a third state and send it all in db """
+async def load_phone_number(message: types.Message, state: FSMContext):
+    """ Load the user's phone number and finish the form """
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['phone_n'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['phone_n'] = sanitize_text(message.text)
     await sql_add_command2(state)
     await state.finish()
-    if await message.answer('Спасибо!\n Ваш вопрос принят.\n'
-                            ' Лена скоро с вами свяжется!😊\n\n'
-                            '<b>Вернуться в меню</b>',
-                            reply_markup=inline_m_kb,
-                            parse_mode=ParseMode.HTML):
-        await bot.send_message(chat_id=os.getenv('ID_NUM'),
-                               text='Вам задали вопрос! 😊 '
-                                    'Please check the database with Questions!')
+    if await send_message_with_parse_mode(
+            message,
+            'Спасибо!\n Ваш вопрос принят.\n'
+            ' Лена скоро с вами свяжется!😊\n\n'
+            '<b>Вернуться в меню</b>',
+            reply_markup=inline_m_kb):
+        await bot.send_message(
+            chat_id=os.getenv('ID_NUM'),
+            text='Вам задали вопрос! 😊 '
+                 'Please check the database with Questions!')
         await message.delete()
 
 
@@ -329,28 +352,31 @@ async def load_phone_n(message: types.Message, state: FSMContext):
 
 
 async def meeting(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
+    await delete_message(callback.message)
+
     read = await sql_read_events()
     for row in read:
-        await callback.message.answer(f'<b>Тематические встречи</b>\n\n'
-                                      f'Ближайшая встреча:\n\n'
-                                      f'Тема: \n<b>{row[1]}</b>\n\n'
-                                      f'Место проведения: <b>{row[2]}</b>\n'
-                                      f'Дата: <b>{row[3]}</b>\n'
-                                      f'Начало: <b>{row[4]}</b>\n'
-                                      f'Цена: <b>{row[5]}</b>\n',
-                                      reply_markup=meeting_kb, parse_mode=ParseMode.HTML)
+        await send_message_with_parse_mode(
+            callback.message,
+            f'<b>Тематические встречи</b>\n\n'
+            f'Ближайшая встреча:\n\n'
+            f'Тема: \n<b>{row[1]}</b>\n\n'
+            f'Место проведения: <b>{row[2]}</b>\n'
+            f'Дата: <b>{row[3]}</b>\n'
+            f'Начало: <b>{row[4]}</b>\n'
+            f'Цена: <b>{row[5]}</b>\n',
+            reply_markup=meeting_kb)
 
 
 async def about_meeting(callback: types.CallbackQuery):
-    if inline_m_kb or inline_kb:
-        await callback.message.delete()
-    await callback.message.answer(f'<b>🔶 Что такое тематические встречи с психологом?</b>\n\n'
-                                  f'{arr_j[7]}\n\n'
-                                  f'<b>Вернуться:</b>',
-                                  parse_mode=ParseMode.HTML,
-                                  reply_markup=meeting_kb)
+    await delete_message(callback.message)
+
+    await send_message_with_parse_mode(
+        callback.message,
+        f'<b>🔶 Что такое тематические встречи с психологом?</b>\n\n'
+        f'{array_json[7]}\n\n'
+        f'<b>Вернуться:</b>',
+        reply_markup=meeting_kb)
 
 
 class FormMeeting(StatesGroup):
@@ -359,36 +385,45 @@ class FormMeeting(StatesGroup):
 
 
 async def write_on_meeting(callback: types.CallbackQuery):
-    if inline_m_kb or meeting_kb:
-        await callback.message.delete()
+    await delete_message(callback.message)
+
     await FormMeeting.full_name.set()
-    await callback.message.answer('Записываююю✍🏻 \n<b>Напишите ваши имя и фамилию.</b>\n\n'
-                                  '⚠️ Если вы передумали, отправьте сообщение c текстом: <b>отмена</b>',
-                                  parse_mode=ParseMode.HTML)
+    await send_message_with_parse_mode(
+        callback.message,
+        'Записываююю✍🏻 \n<b>Напишите ваши имя и фамилию.</b>\n\n'
+        '⚠️ Если вы передумали, отправьте сообщение c текстом: '
+        '<b>отмена</b>')
 
 
 async def catch_full_name(message: types.Message, state: FSMContext):
-    await message.delete()
+    await delete_message(message)
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['full_name'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['full_name'] = sanitize_text(message.text)
 
     await FormMeeting.next()
     await message.answer('Укажите номер телефона, для связи:')
 
 
 async def catch_phone_number(message: types.Message, state: FSMContext):
-    await message.delete()
+    await delete_message(message)
     if message.from_user.id >= 1:
-        await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
+        await bot.delete_message(
+            message.chat.id,
+            message_id=message.message_id - 1)
     async with state.proxy() as data:
-        data['phone_n'] = message.text.replace("<", "").replace(">", "").replace("%", "")
+        data['phone_n'] = sanitize_text(message.text)
     await sql_add_command_meeting(state)
     await state.finish()
-    await message.answer(f'<b>Вы успешно зарегистрированы на мероприятие!</b>🤩\n\n'
-                         f'Мы пришлем вам напоминание, за день до начала мероприятия',
-                         reply_markup=inline_m_kb, parse_mode=ParseMode.HTML)
+    await send_message_with_parse_mode(
+        message,
+        f'<b>Вы успешно зарегистрированы на мероприятие!</b>🤩\n\n'
+        f'Мы пришлём напоминание на указанный вами номер,\n\n'
+        f' за день до начала мероприятия',
+        reply_markup=inline_m_kb)
 
 
 """ Register handlers part """
@@ -426,10 +461,9 @@ def register_handlers_client(dp: Dispatcher):
     '''FAQ send a question handlers'''
 
     dp.register_callback_query_handler(send_question, Text(startswith='/question'))
-    dp.register_message_handler(cancel_state, Text(equals='отмена', ignore_case=True), state="*")
     dp.register_message_handler(load_question, state=FormQuestion.question)
     dp.register_message_handler(load_name2, state=FormQuestion.name)
-    dp.register_message_handler(load_phone_n, state=FormQuestion.phone_n)
+    dp.register_message_handler(load_phone_number, state=FormQuestion.phone_n)
 
     """ Thematic meeting handlers """
     dp.register_callback_query_handler(meeting, Text(startswith='/meeting'))

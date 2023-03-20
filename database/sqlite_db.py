@@ -7,7 +7,7 @@ from keyboards.admin_kb import admins_menu_kb
 def sql_start():
     global base, cur
     try:
-        base = sql.connect('reserved.db')
+        base = sql.connect('database/reserved.db')
         cur = base.cursor()
         if base:
             print('Database connected')

@@ -8,7 +8,7 @@ from create_bot import bot
 
 async def cens_filter(message: types.Message):
     if {i.lower().translate(str.maketrans('', '', string.punctuation)) for i in message.text.split(' ')} \
-            .intersection(set(json.load(open('cens.json')))) != set():
+            .intersection(set(json.load(open('database/cens.json')))) != set():
         cens_message = await message.answer('Выражайтесь культурно!')
         await message.delete()
 
