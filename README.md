@@ -32,7 +32,7 @@ How to install:
     - cens.txt(a file with obscene words, when bot starts it will be converted in .json)
     - master.json(Contain questions dict, bio and prices)
         - Json file structure: {"key": {"queries": [value]},...}
-
+- Start bot from main_bot.py
 
 # In future, i want todo google calendar integration, even though my wife is against it 😅
  
