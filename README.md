@@ -11,25 +11,28 @@ Project in Telegram App:
     - Write new questions from FAQ section
     - Read information from database
     - Show information from database to admin
-    - Read "bio" and "prices" from .txt(Don't ask 😅 it's wife's request)
+    - Read "bio", "prices" and FAQ part from .json
     - Show biography info to client
     - Delete messages with obscene words in chat, where bot is admin and in private messages.  
-     
+    
 Now all requests work.
     - Added new section with events information
+    
+!The main logic of the bot in the handlers folder
 
-For the bot to work, you need:
-- Install packages:
-    - aiogram (When I wrote, I used the version v2.24)
-    - python-dotenv( the same, used v0.21.0)
-- Put it in the root directory:
-    - .env(this file should contain telegram TOKEN and ID_NUM(Telegram user id the bot owner))
-    - The SQL database will be created at the first start
-    - bio.txt
-    - price.txt
+How to install:
+- You needed Installed packages:
+    - python 3.10
+    - aiogram (version v2.24)
+    - python-dotenv(v0.21.0)
+- Put(Create) files it in the bot's root directory:
+    - .env(this file should contain fields TOKEN=your_telegram_token and ID_NUM=telegram_user_id_owner_of_bot)
+- The SQL database will be created at the first bot started
+- Put(Create) files it in the database folder:
     - cens.txt(a file with obscene words, when bot starts it will be converted in .json)
-    - master.json(this file needed for work FAQ section. Contain questions dict(in future i want rename this file))
-
+    - master.json(Contain questions dict, bio and prices)
+        - Json file structure: {"key": {"queries": [value]},...}
+- Start bot from main_bot.py
 
 # In future, i want todo google calendar integration, even though my wife is against it 😅
  
