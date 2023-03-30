@@ -14,7 +14,6 @@ from database.sqlite_db import sql_add_command, sql_add_command2, sql_read_event
 from keyboards.client_kb import inline_kb, inline_faq_kb, inline_m_kb, meeting_kb
 from converter_from_json import array_json
 
-
 load_dotenv(find_dotenv())
 
 
@@ -26,13 +25,7 @@ async def command_start(message: types.Message):
                 await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
         await bot.send_message(
             message.from_user.id,
-            '<b>Приветствую! ✨\nЯ Бот для записи к КПТ и АСТ психологу '
-            'Лене Кабаковой 🤩\n\n</b>'
-            'Здесь вы можете немного познакомиться с Леной, '
-            'как специалистом, задать вопрос или записаться на сессию.\n\n'
-            '🔸 Прямо сейчас\nЛена ведет прием только онлайн\n\n'
-            'Но если вы из Батуми, не пропустите крутые и полезные'
-            ' тематические встречи: <b>@point_of_support</b> 😎',
+            array_json[11],
             reply_markup=inline_kb,
             parse_mode=ParseMode.HTML)
     except Exception as ex:
@@ -84,7 +77,8 @@ async def send_message_with_parse_mode(message: types.Message, text: str, reply_
     await message.answer(text, reply_markup=reply_markup, parse_mode=parse_mode)
 
 
-""" Apply for a consultation """
+""" APPLY FOR A CONSULTATION PART. """
+""" Uses FSM to write data in database. """
 
 
 class FSMClient(StatesGroup):
@@ -101,11 +95,7 @@ async def writing_on_consult(callback: types.CallbackQuery):
     await FSMClient.name.set()
     await send_message_with_parse_mode(
         callback.message,
-        'Чтобы оставить заявку, ответьте, пожалуйста, на 4 вопроса.'
-        '\n⚠️ Если передумали, достаточно написать: <b>отмена</b>\n\n'
-        'Шаг 1.\n'
-        'Давайте немного познакомимся!☺️\n'
-        '<b>Как Вас зовут?</b>')
+        array_json[12])
 
 
 async def cancel_handler(message: types.Message, state: FSMContext):
@@ -121,7 +111,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         return
     await state.finish()
     await message.answer(
-        'OK. Ваша заявка отменена. 👍🏻',
+        array_json[13],
         reply_markup=inline_m_kb)
 
 
@@ -137,8 +127,8 @@ async def load_name(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['name'] = sanitize_text(message.text)
     await FSMClient.next()
-    await message.answer(
-        'Шаг 2.\nВведите Ваш номер телефона')
+    await send_message_with_parse_mode(message,
+                                       array_json[14])
 
 
 async def load_phone(message: types.Message, state: FSMContext):
@@ -152,9 +142,8 @@ async def load_phone(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['phone_n'] = sanitize_text(message.text)
     await FSMClient.next()
-    await message.answer(
-        'Шаг3.\nНапишите город, в котором вы проживаете.'
-        ' Или укажите часовой пояс.')
+    await send_message_with_parse_mode(message,
+                                       array_json[15])
 
 
 async def load_gmt(message: types.Message, state: FSMContext):
@@ -168,14 +157,13 @@ async def load_gmt(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['gmt'] = sanitize_text(message.text)
     await FSMClient.next()
-    await message.answer(
-        'Шаг4.\nМожете коротко описать ваш запрос,\n'
-        ' с которым хотите обратиться.')
+    await send_message_with_parse_mode(message,
+                                       array_json[16])
 
 
 async def load_comment(message: types.Message, state: FSMContext):
     """ Catch a comment """
-
+    await delete_message(message)
     if message.from_user.id >= 1:
         await bot.delete_message(
             message.chat.id,
@@ -186,82 +174,87 @@ async def load_comment(message: types.Message, state: FSMContext):
     await state.finish()
     if await send_message_with_parse_mode(
             message,
-            f'Спасибо! Ваша заявка принята.\n'
-            ' Лена скоро с вами свяжется!😊\n\n'
-            '<b>Вернуться в меню:</b>',
+            array_json[17],
             reply_markup=inline_m_kb):
         await bot.send_message(
             chat_id=os.getenv('ID_NUM'),
-            text='You have a new query! 😊 '
-                 'Please check the database!')
+            text=array_json[18])
         await message.delete()
 
 
-""" FAQ part """
+""" FAQ PART """
 
 
 async def faq(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_message_with_parse_mode(
         callback.message,
-        '<b>🔶 Часто задаваемые вопросы</b>',
+        array_json[19],
         reply_markup=inline_faq_kb)
 
 
 async def first_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[0],
-        '🔶 Как понять, что мне нужно к психологу?')
+        callback.message,
+        array_json[0],
+        array_json[20])
 
 
 async def second_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[1],
-        '🔶 Как выбрать психолога?👍🏻')
+        callback.message,
+        array_json[1],
+        array_json[21])
 
 
 async def eight_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[8],
-        '🔶 Что такое КПТ и ACT?')
+        callback.message,
+        array_json[8],
+        array_json[22])
 
 
 async def third_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[2],
-        '🔶 С какими запросами я могу обратиться?')
+        callback.message,
+        array_json[2],
+        array_json[23])
 
 
 async def four_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[3],
-        '🔶 Как проходит терапия?')
+        callback.message,
+        array_json[3],
+        array_json[24])
 
 
 async def five_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[4],
-        '🔶 Как часто нужно встречаться?')
+        callback.message,
+        array_json[4],
+        array_json[25])
 
 
 async def six_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[5],
-        '🔶 Сколько нужно сессий, для результата?')
+        callback.message,
+        array_json[5],
+        array_json[26])
 
 
 async def seven_query(callback: types.CallbackQuery):
     await delete_message(callback.message)
     await send_faq_response(
-        callback.message, array_json[6],
-        '🔶 Психолог, психотерапевт и психиатр - в чем отличия?')
+        callback.message,
+        array_json[6],
+        array_json[27])
 
 
 async def send_faq_response(message, response_text, header_text):
@@ -272,7 +265,7 @@ async def send_faq_response(message, response_text, header_text):
                          reply_markup=inline_faq_kb)
 
 
-"""Send Your Question part"""
+""" SEND YOUR QUESTION PART """
 
 
 class FormQuestion(StatesGroup):
@@ -290,9 +283,7 @@ async def send_question(callback: types.CallbackQuery):
 
     await send_message_with_parse_mode(
         callback.message,
-        '🔶 Напишите свой вопрос\n'
-        ' и Лена ответит вам в ближайшее время.\n\n'
-        '⚠️ Или напишите: <b>отмена</b>')
+        array_json[28])
 
 
 async def load_question(message: types.Message, state: FSMContext):
@@ -307,7 +298,9 @@ async def load_question(message: types.Message, state: FSMContext):
         data['question'] = sanitize_text(message.text)
 
     await FormQuestion.next()
-    await message.answer('Напишите свое имя:')
+    await send_message_with_parse_mode(
+        message,
+        array_json[29])
 
 
 async def load_name2(message: types.Message, state: FSMContext):
@@ -322,11 +315,14 @@ async def load_name2(message: types.Message, state: FSMContext):
         data['name'] = sanitize_text(message.text)
 
     await FormQuestion.next()
-    await message.answer('Укажите ваш номер телефона:')
+    await send_message_with_parse_mode(
+        message,
+        array_json[30])
 
 
 async def load_phone_number(message: types.Message, state: FSMContext):
     """ Load the user's phone number and finish the form """
+    await delete_message(message)
     if message.from_user.id >= 1:
         await bot.delete_message(
             message.chat.id,
@@ -337,14 +333,11 @@ async def load_phone_number(message: types.Message, state: FSMContext):
     await state.finish()
     if await send_message_with_parse_mode(
             message,
-            'Спасибо!\n Ваш вопрос принят.\n'
-            ' Лена скоро с вами свяжется!😊\n\n'
-            '<b>Вернуться в меню</b>',
+            array_json[31],
             reply_markup=inline_m_kb):
         await bot.send_message(
             chat_id=os.getenv('ID_NUM'),
-            text='Вам задали вопрос! 😊 '
-                 'Please check the database with Questions!')
+            text=array_json[32])
         await message.delete()
 
 
@@ -371,12 +364,19 @@ async def meeting(callback: types.CallbackQuery):
 async def about_meeting(callback: types.CallbackQuery):
     await delete_message(callback.message)
 
-    await send_message_with_parse_mode(
+    await send_meeting_response(
         callback.message,
-        f'<b>🔶 Что такое тематические встречи с психологом?</b>\n\n'
-        f'{array_json[7]}\n\n'
-        f'<b>Вернуться:</b>',
-        reply_markup=meeting_kb)
+        array_json[7],
+        array_json[33]
+    )
+
+
+async def send_meeting_response(message, response_text, header_text):
+    await message.answer(f'<b>{header_text}</b>\n\n'
+                         f'{response_text}\n\n'
+                         f'<b>Вернуться:</b>',
+                         parse_mode=ParseMode.HTML,
+                         reply_markup=meeting_kb)
 
 
 class FormMeeting(StatesGroup):
@@ -390,9 +390,7 @@ async def write_on_meeting(callback: types.CallbackQuery):
     await FormMeeting.full_name.set()
     await send_message_with_parse_mode(
         callback.message,
-        'Записываююю✍🏻 \n<b>Напишите ваши имя и фамилию.</b>\n\n'
-        '⚠️ Если вы передумали, отправьте сообщение c текстом: '
-        '<b>отмена</b>')
+        array_json[34])
 
 
 async def catch_full_name(message: types.Message, state: FSMContext):
@@ -405,7 +403,9 @@ async def catch_full_name(message: types.Message, state: FSMContext):
         data['full_name'] = sanitize_text(message.text)
 
     await FormMeeting.next()
-    await message.answer('Укажите номер телефона, для связи:')
+    await send_message_with_parse_mode(
+        message,
+        array_json[30])
 
 
 async def catch_phone_number(message: types.Message, state: FSMContext):
@@ -420,9 +420,7 @@ async def catch_phone_number(message: types.Message, state: FSMContext):
     await state.finish()
     await send_message_with_parse_mode(
         message,
-        f'<b>Вы успешно зарегистрированы на мероприятие!</b>🤩\n\n'
-        f'Мы пришлём напоминание на указанный вами номер,\n\n'
-        f' за день до начала мероприятия',
+        array_json[35],
         reply_markup=inline_m_kb)
 
 
