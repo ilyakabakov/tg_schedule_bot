@@ -21,8 +21,12 @@ with open(f_name, 'r', encoding='utf8') as file:
 
 
 def array_json(query: str):
-    array = []
-    data = data_json[query]
-    for text in data['queries']:
-        array.append(text)
-    return array[0]
+    try:
+        array = []
+        data = data_json[query]
+
+        for text in data['queries']:
+            array.append(text)
+        return array[0]
+    except Exception as ex:
+        print(ex)

@@ -19,7 +19,6 @@ load_dotenv(find_dotenv())
 
 async def command_start(message: types.Message):
     try:
-
         if message.from_user.id >= 1:
             with suppress(MessageCantBeDeleted, MessageToDeleteNotFound):
                 await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
