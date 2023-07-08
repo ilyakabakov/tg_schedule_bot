@@ -3,7 +3,7 @@ import string
 from aiogram import types, Dispatcher
 from create_bot import bot
 
-"""censoring filter"""
+""" Censoring filter """
 
 
 async def cens_filter(message: types.Message):
@@ -11,9 +11,9 @@ async def cens_filter(message: types.Message):
             .intersection(set(json.load(open('database/cens.json')))) != set():
         cens_message = await message.answer('Выражайтесь культурно!')
         await message.delete()
-
         if message.from_user.id >= 1:
             await bot.delete_message(message.chat.id, message_id=cens_message.message_id)
+    await message.delete()
 
 
 def register_handlers_other(dp: Dispatcher):

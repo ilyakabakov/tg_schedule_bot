@@ -10,9 +10,12 @@ from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToDeleteNotFou
 from create_bot import bot
 from contextlib import suppress
 from dotenv import load_dotenv, find_dotenv
-from database.sqlite_db import sql_add_command, sql_add_command2, sql_read_events, sql_add_command_meeting
-from keyboards.client_kb import inline_kb, inline_faq_kb, inline_m_kb, meeting_kb
-from converter_from_json import array_json
+
+from database.db_queries import new_client, new_question, new_meeting_client, get_events_data
+
+from keyboards.client_kb import inline_kb, inline_faq_kb, inline_m_kb, meeting_kb, cancel_state_kb, \
+    back_to_meeting_page_kb
+from database.json_queries import array_json
 
 load_dotenv(find_dotenv())
 
@@ -24,7 +27,7 @@ async def command_start(message: types.Message):
                 await bot.delete_message(message.chat.id, message_id=message.message_id - 1)
         await bot.send_message(
             message.from_user.id,
-            array_json('hello'),
+            await array_json(user="client_content", query='hello'),
             reply_markup=inline_kb,
             parse_mode=ParseMode.HTML)
     except Exception as ex:
@@ -38,19 +41,17 @@ async def delete_message(message):
 
 
 async def bio(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        f"{array_json('bio')}\n\n"
+        f"{await array_json(user='client_content', query='bio')}\n\n"
         f"<b>Вернуться в меню:</b>",
         reply_markup=inline_m_kb)
 
 
 async def prices(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        f"{array_json('prices')}\n\n"
+        f"{await array_json(user='client_content', query='prices')}\n\n"
         f"<b>Вернуться в меню:</b>",
         reply_markup=inline_m_kb)
 
@@ -59,15 +60,20 @@ async def prices(callback: types.CallbackQuery):
 
 
 async def show_menu(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        '<B>Меню</b>', reply_markup=inline_kb)
+        await array_json(user="client_content", query="hello"), reply_markup=inline_kb)
 
 
 def sanitize_text(text: str) -> str:
     """ Remove invalid characters for the writing in db"""
     return text.replace("<", "").replace(">", "").replace("%", "")
+
+
+async def edit_message_with_parse_mode(message: types.Message, text: str, reply_markup=None, parse_mode=ParseMode.HTML):
+    """ Send a message with specified text, reply markup and parse mode """
+
+    await message.edit_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
 
 
 async def send_message_with_parse_mode(message: types.Message, text: str, reply_markup=None, parse_mode=ParseMode.HTML):
@@ -90,27 +96,22 @@ class FSMClient(StatesGroup):
 
 
 async def writing_on_consult(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await FSMClient.name.set()
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        array_json('writing_on_consultation'))
+        await array_json(user='client_content', query='writing_on_consultation'),
+        reply_markup=cancel_state_kb)
 
 
-async def cancel_handler(message: types.Message, state: FSMContext):
+async def cancel_state_handler(callback: types.CallbackQuery, state: FSMContext):
     """ CANCEL state. One Cancel state working for all state machines! """
 
-    await message.delete()
-    if message.from_user.id >= 1:
-        await bot.delete_message(
-            message.chat.id,
-            message_id=message.message_id - 1)
     current_state = await state.get_state()
     if current_state is None:
         return
     await state.finish()
-    await message.answer(
-        array_json('cancel_state'),
+    await callback.message.edit_text(
+        await array_json(user='client_content', query='cancel_state'),
         reply_markup=inline_m_kb)
 
 
@@ -128,7 +129,8 @@ async def load_name(message: types.Message, state: FSMContext):
     await FSMClient.next()
     await send_message_with_parse_mode(
         message,
-        array_json('phone_number_query'))
+        await array_json(user='client_content', query='phone_number_query'),
+        reply_markup=cancel_state_kb)
 
 
 async def load_phone(message: types.Message, state: FSMContext):
@@ -144,7 +146,8 @@ async def load_phone(message: types.Message, state: FSMContext):
     await FSMClient.next()
     await send_message_with_parse_mode(
         message,
-        array_json('gmt_query'))
+        await array_json(user='client_content', query='gmt_query'),
+        reply_markup=cancel_state_kb)
 
 
 async def load_gmt(message: types.Message, state: FSMContext):
@@ -160,7 +163,8 @@ async def load_gmt(message: types.Message, state: FSMContext):
     await FSMClient.next()
     await send_message_with_parse_mode(
         message,
-        array_json('query_for_query'))
+        await array_json(user='client_content', query='comment'),
+        reply_markup=cancel_state_kb)
 
 
 async def load_comment(message: types.Message, state: FSMContext):
@@ -172,15 +176,15 @@ async def load_comment(message: types.Message, state: FSMContext):
             message_id=message.message_id - 1)
     async with state.proxy() as data:
         data['comment'] = sanitize_text(message.text)
-    await sql_add_command(state)
+    await new_client(state)
     await state.finish()
     if await send_message_with_parse_mode(
             message,
-            array_json('thanks_answer'),
+            await array_json(user='client_content', query='thanks_answer'),
             reply_markup=inline_m_kb):
         await bot.send_message(
             chat_id=os.getenv('ID_NUM'),
-            text=array_json('send_message_to_owner'))
+            text=await array_json(user='client_content', query='send_message_to_owner'))
         await message.delete()
 
 
@@ -188,83 +192,74 @@ async def load_comment(message: types.Message, state: FSMContext):
 
 
 async def faq(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        array_json('faq_header1'),
+        await array_json(user='client_content', query='faq_header1'),
         reply_markup=inline_faq_kb)
 
 
 async def first_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_1'),
-        array_json('faq_header2'))
+        await array_json(user='client_content', query='query_1'),
+        await array_json(user='client_content', query='faq_header2'))
 
 
 async def second_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_2'),
-        array_json('faq_header3'))
+        await array_json(user='client_content', query='query_2'),
+        await array_json(user='client_content', query='faq_header3'))
 
 
 async def eight_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_9'),
-        array_json('faq_header4'))
+        await array_json(user='client_content', query='query_9'),
+        await array_json(user='client_content', query='faq_header4'))
 
 
 async def third_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_3'),
-        array_json('faq_header5'))
+        await array_json(user='client_content', query='query_3'),
+        await array_json(user='client_content', query='faq_header5'))
 
 
 async def four_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_4'),
-        array_json('faq_header6'))
+        await array_json(user='client_content', query='query_4'),
+        await array_json(user='client_content', query='faq_header6'))
 
 
 async def five_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_5'),
-        array_json('faq_header7'))
+        await array_json(user='client_content', query='query_5'),
+        await array_json(user='client_content', query='faq_header7'))
 
 
 async def six_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_6'),
-        array_json('faq_header8'))
+        await array_json(user='client_content', query='query_6'),
+        await array_json(user='client_content', query='faq_header8'))
 
 
 async def seven_query(callback: types.CallbackQuery):
-    await delete_message(callback.message)
     await send_faq_response(
         callback.message,
-        array_json('query_7'),
-        array_json('faq_header9'))
+        await array_json(user='client_content', query='query_7'),
+        await array_json(user='client_content', query='faq_header9'))
 
 
 async def send_faq_response(message, response_text, header_text):
-    await message.answer(f'<b>{header_text}</b>\n\n'
-                         f'{response_text}\n\n'
-                         f'<b>Еще вопросы:</b>',
-                         parse_mode=ParseMode.HTML,
-                         reply_markup=inline_faq_kb)
+    await message.edit_text(f'<b>{header_text}</b>\n\n'
+                            f'{response_text}\n\n'
+                            f'<b>Еще вопросы:</b>',
+                            parse_mode=ParseMode.HTML,
+                            reply_markup=inline_faq_kb)
 
 
 """ SEND YOUR QUESTION PART """
@@ -279,13 +274,13 @@ class FormQuestion(StatesGroup):
 
 async def send_question(callback: types.CallbackQuery):
     """ Start the form by asking the user to enter their question """
-    await delete_message(callback.message)
 
     await FormQuestion.question.set()
 
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        array_json('send_question'))
+        await array_json(user='client_content', query='send_question'),
+        reply_markup=cancel_state_kb)
 
 
 async def load_question(message: types.Message, state: FSMContext):
@@ -302,7 +297,8 @@ async def load_question(message: types.Message, state: FSMContext):
     await FormQuestion.next()
     await send_message_with_parse_mode(
         message,
-        array_json('name_query'))
+        await array_json(user='client_content', query='name_query'),
+        reply_markup=cancel_state_kb)
 
 
 async def load_name2(message: types.Message, state: FSMContext):
@@ -319,66 +315,62 @@ async def load_name2(message: types.Message, state: FSMContext):
     await FormQuestion.next()
     await send_message_with_parse_mode(
         message,
-        array_json('phone_number_query2'))
+        await array_json(user='client_content', query='phone_number_query2'),
+        reply_markup=cancel_state_kb)
 
 
 async def load_phone_number(message: types.Message, state: FSMContext):
     """ Load the user's phone number and finish the form """
     await delete_message(message)
     if message.from_user.id >= 1:
-        await bot.delete_message(
-            message.chat.id,
-            message_id=message.message_id - 1)
+        await bot.delete_message(message.chat.id,
+                                 message_id=message.message_id - 1)
     async with state.proxy() as data:
         data['phone_n'] = sanitize_text(message.text)
-    await sql_add_command2(state)
+    await new_question(state)
     await state.finish()
     if await send_message_with_parse_mode(
             message,
-            array_json('question_complete_answer'),
+            await array_json(user='client_content', query='question_complete_answer'),
             reply_markup=inline_m_kb):
         await bot.send_message(
             chat_id=os.getenv('ID_NUM'),
-            text=array_json('send_message_to_owner2'))
+            text=await array_json(user='client_content', query='send_message_to_owner2'))
         await message.delete()
 
 
-""" Thematic meeting part"""
+""" THEMATIC MEETING PART """
 
 
 async def meeting(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-
-    read = await sql_read_events()
+    """ Meeting page """
+    read = await get_events_data()
     for row in read:
-        await send_message_with_parse_mode(
+        await edit_message_with_parse_mode(
             callback.message,
-            f'<b>Тематические встречи</b>\n\n'
+            f'<b>Мероприятия</b>\n\n'
             f'Ближайшая встреча:\n\n'
-            f'Тема: \n<b>{row[1]}</b>\n\n'
-            f'Место проведения: <b>{row[2]}</b>\n'
-            f'Дата: <b>{row[3]}</b>\n'
-            f'Начало: <b>{row[4]}</b>\n'
-            f'Цена: <b>{row[5]}</b>\n',
+            f'Тема: \n<b>{row.naming}</b>\n\n'
+            f'Место проведения: <b>{row.place}</b>\n'
+            f'Дата: <b>{row.date}</b>\n'
+            f'Начало: <b>{row.time}</b>\n'
+            f'Цена: <b>{row.price} {await array_json(user="other_content", query="currency_gel")}</b>\n',
             reply_markup=meeting_kb)
 
 
 async def about_meeting(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-
     await send_meeting_response(
         callback.message,
-        array_json('query_8'),
-        array_json('about_meetings_header')
-    )
+        await array_json(user='client_content', query='query_8'),
+        await array_json(user='client_content', query='about_meetings_header'))
 
 
 async def send_meeting_response(message, response_text, header_text):
-    await message.answer(f'<b>{header_text}</b>\n\n'
-                         f'{response_text}\n\n'
-                         f'<b>Вернуться:</b>',
-                         parse_mode=ParseMode.HTML,
-                         reply_markup=meeting_kb)
+    await message.edit_text(f'<b>{header_text}</b>\n\n'
+                            f'{response_text}\n\n'
+                            f'<b>Вернуться:</b>',
+                            parse_mode=ParseMode.HTML,
+                            reply_markup=back_to_meeting_page_kb)
 
 
 class FormMeeting(StatesGroup):
@@ -387,12 +379,11 @@ class FormMeeting(StatesGroup):
 
 
 async def write_on_meeting(callback: types.CallbackQuery):
-    await delete_message(callback.message)
-
     await FormMeeting.full_name.set()
-    await send_message_with_parse_mode(
+    await edit_message_with_parse_mode(
         callback.message,
-        array_json('write_on_meeting'))
+        await array_json(user='client_content', query='write_on_meeting'),
+        reply_markup=cancel_state_kb)
 
 
 async def catch_full_name(message: types.Message, state: FSMContext):
@@ -405,9 +396,10 @@ async def catch_full_name(message: types.Message, state: FSMContext):
         data['full_name'] = sanitize_text(message.text)
 
     await FormMeeting.next()
-    await send_message_with_parse_mode(
-        message,
-        array_json('phone_number_query2'))
+    await send_message_with_parse_mode(message,
+                                       await array_json(user='client_content',
+                                                        query='phone_number_query2'),
+                                       reply_markup=cancel_state_kb)
 
 
 async def catch_phone_number(message: types.Message, state: FSMContext):
@@ -418,12 +410,12 @@ async def catch_phone_number(message: types.Message, state: FSMContext):
             message_id=message.message_id - 1)
     async with state.proxy() as data:
         data['phone_n'] = sanitize_text(message.text)
-    await sql_add_command_meeting(state)
+    await new_meeting_client(state)
     await state.finish()
-    await send_message_with_parse_mode(
-        message,
-        array_json('meeting_complete_answer'),
-        reply_markup=inline_m_kb)
+    await send_message_with_parse_mode(message,
+                                       await array_json(user='client_content',
+                                                        query='meeting_complete_answer'),
+                                       reply_markup=inline_m_kb)
 
 
 """ Register handlers part """
@@ -440,7 +432,7 @@ def register_handlers_client(dp: Dispatcher):
     """ Register handlers for creating values for writing in SQLite table """
 
     dp.register_callback_query_handler(writing_on_consult, Text(startswith='/write'), state=None)
-    dp.register_message_handler(cancel_handler, Text(equals='отмена', ignore_case=True), state="*")
+    dp.register_callback_query_handler(cancel_state_handler, Text(startswith='/cancel'), state="*")
     dp.register_message_handler(load_name, state=FSMClient.name)
     dp.register_message_handler(load_phone, state=FSMClient.phone)
     dp.register_message_handler(load_gmt, state=FSMClient.gmt)

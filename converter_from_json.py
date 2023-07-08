@@ -1,8 +1,7 @@
 import json
 
-arr = []
-
 """ CENSURE MODULE """
+arr = []
 with open('database/cens.txt', encoding='utf8') as r:
     for i in r:
         n = i.lower().split('\n')[0]
@@ -11,22 +10,3 @@ with open('database/cens.txt', encoding='utf8') as r:
 
 with open('database/cens.json', 'w', encoding='utf8') as e:
     json.dump(arr, e)
-
-""" PARSER FOR JSON FILE """
-
-f_name = 'database/master.json'
-
-with open(f_name, 'r', encoding='utf8') as file:
-    data_json = json.load(file)
-
-
-def array_json(query: str):
-    try:
-        array = []
-        data = data_json[query]
-
-        for text in data['queries']:
-            array.append(text)
-        return array[0]
-    except Exception as ex:
-        print(ex)
