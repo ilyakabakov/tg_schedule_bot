@@ -1,11 +1,13 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 """ Keyboard_menu_button """
+
 inline_m_kb = InlineKeyboardMarkup(row_width=1)
 menu_bttn = InlineKeyboardButton('Меню', callback_data='/Menu')
 inline_m_kb.add(menu_bttn)
 
 """ Keyboard FAQ part """
+
 inline_faq_kb = InlineKeyboardMarkup(row_width=1)
 faq_b1 = InlineKeyboardButton(text="Как понять, что\n мне нужно к психологу?",
                               callback_data='/first_query')
@@ -29,6 +31,7 @@ faq_bttns = [InlineKeyboardButton(text='Как выбрать психолога
 inline_faq_kb.add(faq_b1).add(*faq_bttns).add(menu_bttn)
 
 """ Inline Main keyboard part """
+
 inline_kb = InlineKeyboardMarkup(row_width=1)
 b1 = InlineKeyboardButton(text=' Часто задаваемые вопросы ⁉️',
                           callback_data='/faq')
@@ -51,7 +54,7 @@ meeting_b1 = InlineKeyboardButton(text='О наших мероприятиях',
 meeting_b2 = InlineKeyboardButton(text='Записаться на мероприятие',
                                   callback_data='/thematic_write')
 meeting_kb.add(meeting_b1, meeting_b2).add(menu_bttn)
-"back button"
+""" Back button """
 back_to_meeting_page_kb = InlineKeyboardMarkup()
 back_to_meet_b = InlineKeyboardButton(text='Назад',
                                       callback_data='/meeting')

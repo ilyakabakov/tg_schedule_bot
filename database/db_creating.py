@@ -14,8 +14,11 @@ async_engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}",
                                    future=True)
 Base = declarative_base()
 
+""" Database Models """
+
 
 class Client(Base):
+    """ The Clients table model """
     __tablename__ = 'clients'
 
     client_id = Column(Integer, primary_key=True)
@@ -26,6 +29,8 @@ class Client(Base):
 
 
 class Question(Base):
+    """ The Questions table model """
+
     __tablename__ = 'questions'
 
     question_id = Column(Integer, primary_key=True)
@@ -35,6 +40,7 @@ class Question(Base):
 
 
 class Meeting(Base):
+    """ The Meetings(EventClients) table model """
     __tablename__ = 'meetings'
 
     client_id = Column(Integer, primary_key=True)
@@ -43,6 +49,7 @@ class Meeting(Base):
 
 
 class Event(Base):
+    """ The Events table model """
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
     naming = Column(String)
@@ -53,5 +60,7 @@ class Event(Base):
 
 
 async def base_start():
+    """ Starting the database """
+
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

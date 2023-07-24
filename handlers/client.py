@@ -12,7 +12,6 @@ from contextlib import suppress
 from dotenv import load_dotenv, find_dotenv
 
 from database.db_queries import new_client, new_question, new_meeting_client, get_events_data
-
 from keyboards.client_kb import inline_kb, inline_faq_kb, inline_m_kb, meeting_kb, cancel_state_kb, \
     back_to_meeting_page_kb
 from database.json_queries import array_json
@@ -21,6 +20,8 @@ load_dotenv(find_dotenv())
 
 
 async def command_start(message: types.Message):
+    """ Start bot handler """
+
     try:
         if message.from_user.id >= 1:
             with suppress(MessageCantBeDeleted, MessageToDeleteNotFound):
@@ -35,12 +36,15 @@ async def command_start(message: types.Message):
 
 
 async def delete_message(message):
-    """ Anti-flood func. This function for deleting previous message. """
+    """ Anti-flood func. This function for deleting previous message by bot. """
+
     if inline_m_kb or inline_kb:
         await message.delete()
 
 
 async def bio(callback: types.CallbackQuery):
+    """ Show about page """
+
     await edit_message_with_parse_mode(
         callback.message,
         f"{await array_json(user='client_content', query='bio')}\n\n"
@@ -49,6 +53,8 @@ async def bio(callback: types.CallbackQuery):
 
 
 async def prices(callback: types.CallbackQuery):
+    """ Show prices page """
+
     await edit_message_with_parse_mode(
         callback.message,
         f"{await array_json(user='client_content', query='prices')}\n\n"
@@ -60,6 +66,9 @@ async def prices(callback: types.CallbackQuery):
 
 
 async def show_menu(callback: types.CallbackQuery):
+    """ This page displayed
+        when user tap a back to menu button """
+
     await edit_message_with_parse_mode(
         callback.message,
         await array_json(user="client_content", query="hello"), reply_markup=inline_kb)
@@ -87,7 +96,7 @@ async def send_message_with_parse_mode(message: types.Message, text: str, reply_
 
 
 class FSMClient(StatesGroup):
-    """ Start the StatesMachine"""
+    """ Create FSM model """
 
     name = State()
     phone = State()
@@ -96,6 +105,7 @@ class FSMClient(StatesGroup):
 
 
 async def writing_on_consult(callback: types.CallbackQuery):
+    """ Start the State Machine """
     await FSMClient.name.set()
     await edit_message_with_parse_mode(
         callback.message,
@@ -104,7 +114,7 @@ async def writing_on_consult(callback: types.CallbackQuery):
 
 
 async def cancel_state_handler(callback: types.CallbackQuery, state: FSMContext):
-    """ CANCEL state. One Cancel state working for all state machines! """
+    """ CANCEL state. One cancel state handler working for all state machines! """
 
     current_state = await state.get_state()
     if current_state is None:
@@ -116,7 +126,7 @@ async def cancel_state_handler(callback: types.CallbackQuery, state: FSMContext)
 
 
 async def load_name(message: types.Message, state: FSMContext):
-    """ Catch name and write in table """
+    """ Save name in state """
 
     await message.delete()
     if message.from_user.id >= 1:
@@ -134,7 +144,7 @@ async def load_name(message: types.Message, state: FSMContext):
 
 
 async def load_phone(message: types.Message, state: FSMContext):
-    """ Catch a phone number """
+    """ Save a phone number in state """
 
     await message.delete()
     if message.from_user.id >= 1:
@@ -151,7 +161,7 @@ async def load_phone(message: types.Message, state: FSMContext):
 
 
 async def load_gmt(message: types.Message, state: FSMContext):
-    """Catch a Timezone """
+    """Save a Timezone in state """
 
     await message.delete()
     if message.from_user.id >= 1:
@@ -168,7 +178,8 @@ async def load_gmt(message: types.Message, state: FSMContext):
 
 
 async def load_comment(message: types.Message, state: FSMContext):
-    """ Catch a comment """
+    """ Save a comment and save all state in db.
+        Finish current state """
     await delete_message(message)
     if message.from_user.id >= 1:
         await bot.delete_message(
@@ -192,6 +203,8 @@ async def load_comment(message: types.Message, state: FSMContext):
 
 
 async def faq(callback: types.CallbackQuery):
+    """ FAQ main page """
+
     await edit_message_with_parse_mode(
         callback.message,
         await array_json(user='client_content', query='faq_header1'),
@@ -199,6 +212,8 @@ async def faq(callback: types.CallbackQuery):
 
 
 async def first_query(callback: types.CallbackQuery):
+    """ First response page """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_1'),
@@ -206,6 +221,8 @@ async def first_query(callback: types.CallbackQuery):
 
 
 async def second_query(callback: types.CallbackQuery):
+    """ Second response page """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_2'),
@@ -213,6 +230,9 @@ async def second_query(callback: types.CallbackQuery):
 
 
 async def eight_query(callback: types.CallbackQuery):
+    """ Eight response page.
+        by display order """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_9'),
@@ -220,6 +240,8 @@ async def eight_query(callback: types.CallbackQuery):
 
 
 async def third_query(callback: types.CallbackQuery):
+    """ Third response page. """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_3'),
@@ -227,6 +249,8 @@ async def third_query(callback: types.CallbackQuery):
 
 
 async def four_query(callback: types.CallbackQuery):
+    """ Four response page. """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_4'),
@@ -234,6 +258,8 @@ async def four_query(callback: types.CallbackQuery):
 
 
 async def five_query(callback: types.CallbackQuery):
+    """ Five response page. """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_5'),
@@ -241,6 +267,8 @@ async def five_query(callback: types.CallbackQuery):
 
 
 async def six_query(callback: types.CallbackQuery):
+    """ Six response page. """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_6'),
@@ -248,6 +276,8 @@ async def six_query(callback: types.CallbackQuery):
 
 
 async def seven_query(callback: types.CallbackQuery):
+    """ Seven response page. """
+
     await send_faq_response(
         callback.message,
         await array_json(user='client_content', query='query_7'),
@@ -255,6 +285,9 @@ async def seven_query(callback: types.CallbackQuery):
 
 
 async def send_faq_response(message, response_text, header_text):
+    """ This feature reduces
+        the amount of repetitive code  """
+
     await message.edit_text(f'<b>{header_text}</b>\n\n'
                             f'{response_text}\n\n'
                             f'<b>Еще вопросы:</b>',
@@ -266,7 +299,8 @@ async def send_faq_response(message, response_text, header_text):
 
 
 class FormQuestion(StatesGroup):
-    """ Start the State Machine """
+    """ Create FSM model for Ask a Question """
+
     question = State()
     name = State()
     phone_n = State()
@@ -284,7 +318,7 @@ async def send_question(callback: types.CallbackQuery):
 
 
 async def load_question(message: types.Message, state: FSMContext):
-    """ Load the user's question and move to the next state """
+    """ Save the user's question and move to the next state """
 
     await delete_message(message)
     if message.from_user.id >= 1:
@@ -302,7 +336,7 @@ async def load_question(message: types.Message, state: FSMContext):
 
 
 async def load_name2(message: types.Message, state: FSMContext):
-    """ Load the user's name and move to the next state """
+    """ Save the user's name and move to the next state """
 
     await delete_message(message)
     if message.from_user.id >= 1:
@@ -320,7 +354,9 @@ async def load_name2(message: types.Message, state: FSMContext):
 
 
 async def load_phone_number(message: types.Message, state: FSMContext):
-    """ Load the user's phone number and finish the form """
+    """ Saving last response in state
+        and saving all state in db """
+
     await delete_message(message)
     if message.from_user.id >= 1:
         await bot.delete_message(message.chat.id,
@@ -343,7 +379,8 @@ async def load_phone_number(message: types.Message, state: FSMContext):
 
 
 async def meeting(callback: types.CallbackQuery):
-    """ Meeting page """
+    """ Events page """
+
     read = await get_events_data()
     for row in read:
         await edit_message_with_parse_mode(
@@ -359,6 +396,8 @@ async def meeting(callback: types.CallbackQuery):
 
 
 async def about_meeting(callback: types.CallbackQuery):
+    """ Page with info about events """
+
     await send_meeting_response(
         callback.message,
         await array_json(user='client_content', query='query_8'),
@@ -374,11 +413,15 @@ async def send_meeting_response(message, response_text, header_text):
 
 
 class FormMeeting(StatesGroup):
+    """ Create FSM model for Sign up to event """
+
     full_name = State()
     phone_n = State()
 
 
 async def write_on_meeting(callback: types.CallbackQuery):
+    """ Start State Machine """
+
     await FormMeeting.full_name.set()
     await edit_message_with_parse_mode(
         callback.message,
@@ -387,6 +430,8 @@ async def write_on_meeting(callback: types.CallbackQuery):
 
 
 async def catch_full_name(message: types.Message, state: FSMContext):
+    """ Saving first response in state """
+
     await delete_message(message)
     if message.from_user.id >= 1:
         await bot.delete_message(
@@ -403,6 +448,9 @@ async def catch_full_name(message: types.Message, state: FSMContext):
 
 
 async def catch_phone_number(message: types.Message, state: FSMContext):
+    """ Saving second response in state
+        and saving all state in db """
+
     await delete_message(message)
     if message.from_user.id >= 1:
         await bot.delete_message(

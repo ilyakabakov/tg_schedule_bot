@@ -7,6 +7,7 @@ AsyncSessionLocal = sessionmaker(async_engine, expire_on_commit=False, class_=As
 
 
 def get_async_session():
+    """ Func for getting async session """
     async_session = AsyncSessionLocal()
     return async_session
 
@@ -16,6 +17,7 @@ def get_async_session():
 
 async def new_client(state):
     """ Create a new row in the clients table """
+
     async with state.proxy() as data:
         client = Client(
             name=data['name'],
@@ -29,6 +31,7 @@ async def new_client(state):
 
 async def new_question(state):
     """ Create a new row in the questions table """
+
     async with state.proxy() as data:
         question = Question(
             question=data['question'],
@@ -41,6 +44,7 @@ async def new_question(state):
 
 async def new_meeting(state):
     """ Create a new row in the events table """
+
     async with state.proxy() as data:
         event = Event(
             id=1,
@@ -55,7 +59,8 @@ async def new_meeting(state):
 
 
 async def new_meeting_client(state):
-    """ Create a new row in the meetings table """
+    """ Create a new row in the meetings(event_clients) table """
+
     async with state.proxy() as data:
         meeting = Meeting(
             full_name=data["full_name"],
@@ -76,6 +81,7 @@ async_session = sessionmaker(async_engine,
 
 async def get_events_data():
     """ Get from events table """
+
     async with async_session() as session:
         stmt = select(Event)
         res = await session.execute(stmt)
@@ -85,7 +91,8 @@ async def get_events_data():
 
 
 async def get_clients_data():
-    """ Get from clients table """
+    """ Get all data from clients table """
+
     async with async_session() as session:
         stmt = select(Client)
         result = await session.execute(stmt)
@@ -95,6 +102,8 @@ async def get_clients_data():
 
 
 async def get_client_data():
+    """ Get the last element from clients table """
+
     async with async_session() as session:
         stmt = select(Client).order_by(desc(Client.client_id)).limit(1)
         result = await session.execute(stmt)
@@ -104,7 +113,8 @@ async def get_client_data():
 
 
 async def get_event_clients_data():
-    """ Get from meetings table """
+    """ Get from meetings(event_clients) table """
+
     async with async_session() as session:
         stmt = select(Meeting)
         result = await session.execute(stmt)
@@ -115,6 +125,7 @@ async def get_event_clients_data():
 
 async def get_questions_data():
     """" Get from questions table """
+
     async with async_session() as session:
         stmt = select(Question)
         result = await session.execute(stmt)
@@ -128,6 +139,7 @@ async def get_questions_data():
 
 async def delete_client_data(data):
     """ Delete a row in clients table """
+
     async with async_session() as session:
         stmt = delete(Client).where(Client.client_id == int(data))
         await session.execute(stmt)
@@ -136,6 +148,7 @@ async def delete_client_data(data):
 
 async def delete_meeting_client_data(data):
     """ Delete a row in the meetings table """
+
     async with async_session() as session:
         stmt = delete(Meeting).where(Meeting.client_id == int(data))
         await session.execute(stmt)
@@ -144,6 +157,7 @@ async def delete_meeting_client_data(data):
 
 async def delete_question_data(data):
     """" Delete a row in the question table """
+
     async with async_session() as session:
         stmt = delete(Question).where(Question.question_id == int(data))
         await session.execute(stmt)
@@ -152,6 +166,7 @@ async def delete_question_data(data):
 
 async def drop_all_tables():
     """ Drop all tables """
+
     async with async_engine.begin() as conn:
         async with async_session as session:
             metadata = MetaData()

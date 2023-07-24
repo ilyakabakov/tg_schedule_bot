@@ -8,7 +8,7 @@ load_dotenv(find_dotenv())
 storage_m = RedisStorage2('localhost',
                           6379,
                           db=5,
-                          #password=os.getenv('REDIS_PASSWORD'),
+                          password=os.getenv('REDIS_PASSWORD'),
                           pool_size=10,
                           prefix="my_fsm_key")
 

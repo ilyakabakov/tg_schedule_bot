@@ -1,15 +1,15 @@
-# import redis
 import logging
 import os
 
 import aiogram.dispatcher.filters
+from aiogram.utils import executor
 
 from create_bot import dp
-from aiogram.utils import executor
 from handlers import client, admin, other
 from database import db_creating
 
-""" Logging configuration """
+""" Logging configuration. """
+
 cwd = os.getcwd()
 
 logging.basicConfig(filename=os.path.join(cwd, 'logs/main.log'))
@@ -32,7 +32,6 @@ logger.addHandler(file_handler)
 # Disable logging to console
 logger.propagate = False
 
-
 # pip install:
 # aiogram
 # sqlalchemy
@@ -41,10 +40,15 @@ logger.propagate = False
 # xlsxwriter
 # redis
 
+""" Starting the bot """
+
+
 async def if_started():
+    """ Function for connecting to database """
+
     logging.getLogger('sqlalchemy.engine.Engine').setLevel(logging.WARNING)
     logging.getLogger().setLevel(logging.WARNING)
-    """Bot started from here"""
+
     try:
         print('Bot is ONLINE')
         await db_creating.base_start()
