@@ -1,0 +1,58 @@
+{
+  "client_content": {
+    "query_1": "FAQ Text",
+	"query_2": "FAQ Text",
+	"query_3": "FAQ Text",
+	"query_4": "FAQ Text",
+	"query_5": "FAQ Text",
+	"query_6": "FAQ Text",
+	"query_7": "FAQ Text",
+	"query_8": "FAQ Text",
+	"query_9": "FAQ Text",
+	"bio": "<b>Text about</b>",
+	"prices": "Prices text",
+	"hello": "<b>Hello text</b>",
+	"writing_on_consultation": "Name question text",
+	"cancel_state": "State was cancelled",
+	"phone_number_query": "Phone number question text",
+	"gmt_query": "GMT question text",
+	"comment": "Comment question text",
+	"thanks_answer": "Thank you text",
+	"send_message_to_owner": "Congratilations text",
+	"faq_header1": "FAQ Header text",
+	"faq_header2": "FAQ Header text",
+	"faq_header3": "FAQ Header text",
+	"faq_header4": "FAQ Header text",
+	"faq_header5": "FAQ Header text",
+	"faq_header6": "FAQ Header text",
+	"faq_header7": "FAQ Header text",
+	"faq_header8": "FAQ Header text",
+	"faq_header9": "FAQ Header text",
+	"send_question": "Send question text",
+	"name_query": "Send a name text",
+	"phone_number_query2": "Send a phone text",
+	"question_complete_answer": "Thanx for question text",
+	"send_message_to_owner2": "Having new question text",
+	"about_meetings_header": "About events text",
+	"write_on_meeting": "Send full name text",
+	"meeting_complete_answer": "<b>Thanx for write on event text"
+},
+  "admin_content":{
+	"hello_page": "Welcome to admin text",
+	"admins_menu": "admins menu text",
+	  "meeting_naming": "send event name text",
+	  "meeting_place": " send event place text",
+	  "meeting_date": "send event date text",
+	  "meeting_time": "send event start text",
+	  "meeting_price": "send ticket price\n* send only number\n** Current currency:",
+	  "meeting_complete": "Event registereg text",
+	  "cancel_func_text": "Cancel text"
+
+  },
+	"other_content":{
+		"currency_gel": "GEL",
+	  	"currency_rub": "RUB",
+	  	"currency_usd": "USD",
+	  	"currency_eur": "EUR"
+	}
+}
