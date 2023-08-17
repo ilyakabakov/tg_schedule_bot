@@ -2,7 +2,6 @@ import json
 import os
 
 cwd = os.getcwd()
-
 f_name = os.path.join(cwd, 'database/content.json')
 
 with open(f_name, 'r', encoding="utf-8") as file:
