@@ -1,35 +1,41 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram import types
+from aiogram.types import InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 """Admin's keyboard """
 
 
-admins_kb = InlineKeyboardMarkup(row_width=1)
-b_open_db = InlineKeyboardButton(text='👀 Все заявки на консультацию',
-                                 callback_data='/Open_db')
-b_open_last = InlineKeyboardButton(text='👀 Последний запрос',
-                                   callback_data='/Open_last_client')
-b_delete_db = InlineKeyboardButton(text='❌ Удалить клиента',
-                                   callback_data='/Delete')
-b_open_questions_db = InlineKeyboardButton(text='👀 Открыть все вопросы',
-                                           callback_data='/Open_questions_db')
-b_delete_question = InlineKeyboardButton(text='❌ Удалить вопрос',
-                                         callback_data='/clear_question')
-b_event1 = InlineKeyboardButton(text='✍🏻 Изменить афишу',
-                                callback_data='/create_event')
-b_meeting_list = InlineKeyboardButton(text='👀 Список участников встречи',
-                                      callback_data='/show_list')
-b_meeting_list_del = InlineKeyboardButton(text='❌ Удалить список участников встречи',
-                                          callback_data='/delete_list')
-admins_kb.add(b_open_db,
-              b_open_last,
-              b_delete_db,
-              b_open_questions_db,
-              b_delete_question,
-              b_event1,
-              b_meeting_list,
-              b_meeting_list_del)
+def admin_keyboard() -> InlineKeyboardMarkup:
+    buttons_list = [
+        types.InlineKeyboardButton(text='👀 Все заявки на консультацию',
+                                   callback_data='Open_db'),
+        types.InlineKeyboardButton(text='👀 Последний запрос',
+                                   callback_data='Open_last_client'),
+        types.InlineKeyboardButton(text='❌ Удалить клиента',
+                                   callback_data='Delete'),
+        types.InlineKeyboardButton(text='👀 Открыть все вопросы',
+                                   callback_data='Open_questions_db'),
+        types.InlineKeyboardButton(text='❌ Удалить вопрос',
+                                   callback_data='Clear_question'),
+        types.InlineKeyboardButton(text='✍🏻 Изменить афишу',
+                                   callback_data='Create_event'),
+        types.InlineKeyboardButton(text='👀 Список участников встречи',
+                                   callback_data='Show_list'),
+        types.InlineKeyboardButton(text='❌ Удалить список участников встречи',
+                                   callback_data='Delete_list')
+    ]
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(*buttons_list)
+    keyboard.adjust(1)
+    return keyboard.as_markup(resize_keyboard=True)
 
-admins_menu_kb = InlineKeyboardMarkup(row_width=1)
-b_admn_menu = InlineKeyboardButton(text="😎 Admin's menu",
-                                   callback_data='/admin_menu')
-admins_menu_kb.add(b_admn_menu)
+
+def back_to_admin_menu() -> InlineKeyboardMarkup:
+    buttons_list = [
+        types.InlineKeyboardButton(text="😎 Admin's menu",
+                                   callback_data='admin_menu')
+    ]
+    keyboard = InlineKeyboardBuilder()
+    keyboard.add(*buttons_list)
+    keyboard.adjust(1)
+    return keyboard.as_markup()

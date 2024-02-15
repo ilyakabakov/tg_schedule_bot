@@ -11,6 +11,11 @@ with open(f_name, 'r', encoding="utf-8") as file:
 
 
 async def array_json(user: str, query: str):
+    """ This func takes an arguments:
+    user argument - means content for user(like an admin or a client or something like that)
+    query argument is the key in dict.
+    Finally, function return text for the current content page. """
+
     try:
         data = await get_data_json(user)
         return data[query]

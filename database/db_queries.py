@@ -15,56 +15,53 @@ def get_async_session():
 """ DATABASE WRITE REQUESTS """
 
 
-async def new_client(state):
+async def new_client(data):
     """ Create a new row in the clients table """
-
-    async with state.proxy() as data:
-        client = Client(
-            name=data['name'],
-            phone_number=data['phone_n'],
-            gmt=data['gmt'],
-            comment=data['comment'])
+    # get_data = data
+    client = Client(
+        name=data.get('name'),
+        phone_number=data.get('phone'),
+        gmt=data.get('gmt'),
+        comment=data.get('comment')
+    )
     async with get_async_session() as a_session:
         a_session.add(client)
         await a_session.commit()
 
 
-async def new_question(state):
+async def new_question(data):
     """ Create a new row in the questions table """
 
-    async with state.proxy() as data:
-        question = Question(
-            question=data['question'],
-            name=data['name'],
-            phone_number=data['phone_n'])
+    question = Question(
+        question=data.get('question'),
+        name=data.get('name'),
+        phone_number=data.get('phone_n'))
     async with get_async_session() as a_session:
         a_session.add(question)
         await a_session.commit()
 
 
-async def new_meeting(state):
+async def new_meeting(data):
     """ Create a new row in the events table """
 
-    async with state.proxy() as data:
-        event = Event(
+    event = Event(
             id=1,
-            naming=data['naming'],
-            place=data['place'],
-            date=data['date'],
-            time=data['time'],
-            price=data['price'])
+            naming=data.get('naming'),
+            place=data.get('place'),
+            date=data.get('date'),
+            time=data.get('time'),
+            price=data.get('price'))
     async with get_async_session() as a_session:
         a_session.add(event)
         await a_session.commit()
 
 
-async def new_meeting_client(state):
+async def new_meeting_client(data):
     """ Create a new row in the meetings(event_clients) table """
 
-    async with state.proxy() as data:
-        meeting = Meeting(
-            full_name=data["full_name"],
-            phone_number=data["phone_n"]
+    meeting = Meeting(
+            full_name=data.get("full_name"),
+            phone_number=data.get("phone_n")
         )
 
     async with get_async_session() as a_session:
@@ -172,10 +169,10 @@ async def drop_all_tables():
             metadata = MetaData()
             metadata.reflect(bind=conn)
 
-            # Получаем список всех таблиц в базе данных
+            # Get list of all tables in database
             all_tables = metadata.sorted_tables
 
-            # Удаляем каждую таблицу по очереди
+            # Delete all tables
             for table in all_tables:
                 await session.execute(Table(table.name, metadata).delete())
 

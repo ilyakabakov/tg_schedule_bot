@@ -1,11 +1,10 @@
+import asyncio
 import logging
 import os
+import sys
 
-import aiogram.dispatcher.filters
-from aiogram.utils import executor
-
-from create_bot import dp
-from handlers import client, admin, other
+from create_bot import dp, bot
+from handlers import client, faq, events, admin, other
 from database import db_creating
 
 """ Logging configuration. """
@@ -33,7 +32,7 @@ logger.addHandler(file_handler)
 logger.propagate = False
 
 # pip install:
-# aiogram
+# aiogram framework (bot is written on 3.3.0 version of aiogram)
 # sqlalchemy
 # aiosqlite
 # python-dotenv
@@ -41,10 +40,16 @@ logger.propagate = False
 # redis
 
 """ Starting the bot """
+ALLOWED_UPDATES = [
+    'message',
+    'edited_message',
+    'callback_query'
+]
 
 
 async def if_started():
-    """ Function for connecting to database """
+    """ Function for connecting to database,
+        routing and starting polling """
 
     logging.getLogger('sqlalchemy.engine.Engine').setLevel(logging.WARNING)
     logging.getLogger().setLevel(logging.WARNING)
@@ -52,35 +57,21 @@ async def if_started():
     try:
         print('Bot is ONLINE')
         await db_creating.base_start()
+        dp.include_routers(client.client_router,
+                           faq.faq_router,
+                           events.meetings_router
+                           )
+        dp.include_router(admin.admin_router)
+        dp.include_router(other.user_group_router)
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot,
+                               allowed_updates=ALLOWED_UPDATES)
     except Exception as ex:
         print(f" FAILED TO START: {ex}")
-    except aiogram.dispatcher.filters.ExceptionsFilter as ex_filter:
-        print(f" FAILED TO START DISPATHCHER: {ex_filter}")
-
-
-async def on_startup(dp):
-    """ This function is needed to start to avoid
-     an exception('courutine was never awaited')"""
-    await if_started()
-
-
-async def on_shutdown(dp):
-    """ Func to closing connection to Redis """
-    await dp.storage.close()
-    await dp.storage.wait_closed()
-    print('Shutdown Redis')
-
-
-# Register handlers here
-client.register_handlers_client(dp)
-admin.register_handlers_admin(dp)
-other.register_handlers_other(dp)
 
 if __name__ == '__main__':
     try:
-        executor.start_polling(dp, skip_updates=True,
-                               on_startup=on_startup,
-                               on_shutdown=on_shutdown)
-
+        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+        asyncio.run(if_started())
     except Exception as ex:
         print(f"FAILED: {ex}")
