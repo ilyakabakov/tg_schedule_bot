@@ -8,15 +8,10 @@ from aiogram.fsm.storage.redis import RedisStorage
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
-# storage_m = RedisStorage('localhost',
-#                         6379,
-                         #  password=os.getenv('REDIS_PASSWORD'),
-#                         )
-# pool_size=10,
-# prefix="my_fsm_key")
+
 storage_m = RedisStorage.from_url(
-    # f"redis://{os.getenv('REDIS_PASSWORD')}@localhost:6379/my_fsm_key"
-    "redis://localhost:6379/my_fsm_key"
+    # f"redis://{os.getenv('REDIS_PASSWORD')}@localhost:6379/0"  # Uncomment this string if bot deployed on server.
+    "redis://localhost:6379/0"  # For redis on my machine. Comment this string if deployed on server
 )
 bot = Bot(token=os.getenv('TOKEN'),
           parse_mode=ParseMode.HTML
