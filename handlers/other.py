@@ -1,9 +1,6 @@
-import json
-import string
 from aiogram import types, Router, Bot
 from aiogram.filters import Command
 
-from create_bot import bot
 from filters.chat_types import ChatTypeFilter
 
 """ Censoring filter """
@@ -14,8 +11,10 @@ user_group_router.edited_message.filter(ChatTypeFilter(["group", "supergroup"]))
 
 @user_group_router.message(Command("admin"))
 async def get_admins(message: types.Message, bot: Bot):
+    """ This function is the first part of the two-factor authentication analog,
+    catches the Admin command in the admin chat and identifies the rank of the user
+    in this chat, keeping the ID in the list that is used in the custom IsAdmin filter. """
     chat_id = message.chat.id
-    print("Command /admin is called")
     admins_list = await bot.get_chat_administrators(chat_id)
     admins_list = [
         member.user.id

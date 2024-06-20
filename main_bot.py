@@ -32,7 +32,7 @@ logger.addHandler(file_handler)
 logger.propagate = False
 
 # pip install:
-# aiogram framework (bot is written on 3.3.0 version of aiogram)
+# aiogram framework (bot written in version 3.3.0 of aiogram)
 # sqlalchemy
 # aiosqlite
 # python-dotenv
