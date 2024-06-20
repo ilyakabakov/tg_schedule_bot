@@ -1,9 +1,11 @@
-from aiogram.filters import Command, StateFilter
+import os
 
+from aiogram.filters import Command, StateFilter
 
 from aiogram import types, Router, Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.enums import ParseMode
+from dotenv import load_dotenv, find_dotenv
 
 from database.db_queries import new_meeting, get_clients_data, get_event_clients_data, delete_meeting_client_data, \
     get_questions_data, delete_question_data, delete_client_data, get_client_data
@@ -17,24 +19,53 @@ from filters.chat_types import ChatTypeFilter, IsAdmin
 
 from keyboards.client_kb import cancel_state_kb, get_menu_kb
 
-
+load_dotenv(find_dotenv())
 admin_router = Router()
 admin_router.message.filter(ChatTypeFilter(['private']), IsAdmin())
 
+""" Admin authentication State Machine """
 
-@admin_router.message(Command('admin'))
-async def director_test(message: types.Message, bot: Bot):
-    """ Check on admin rights """
 
-    print("Send keyboard to admin")
+class Auth(StatesGroup):
+    username = State()
+    password = State()
+
+
+@admin_router.message(StateFilter(None), Command('admin'))
+async def get_username(message: types.Message, bot: Bot, state: FSMContext) -> None:
+    await state.set_state(Auth.username)
     await bot.send_message(
         message.from_user.id,
-        await array_json(
-            user="admin_content",
-            query="hello_page"
-        ),
-        reply_markup=admin_keyboard()
-    )
+        text='LOGIN:',
+        reply_markup=cancel_state_kb())
+
+
+@admin_router.message(Auth.username)
+async def get_password(message: types.Message, state: FSMContext):
+    await state.update_data(username=message.text)
+    await state.set_state(Auth.password)
+    await message.answer(
+        text="PASSWORD:",
+        reply_markup=cancel_state_kb())
+
+
+@admin_router.message(Auth.password)
+async def get_access(message: types.Message, state: FSMContext):
+    await state.update_data(password=message.text)
+    data = await state.get_data()
+    if data.get('username') == os.getenv('LOGIN') and data.get('password') == os.getenv('PASSWORD'):
+        await state.clear()
+        await message.answer(
+            await array_json(
+                user="admin_content",
+                query="hello_page"
+            ),
+            reply_markup=admin_keyboard()
+        )
+    else:
+        await state.clear()
+        await message.answer(text=f"Login: {data.get('username')} and password: {data.get('password')} incorrect.\n"
+                                  f"Permission denied")
 
 
 """CLIENT DB PART"""

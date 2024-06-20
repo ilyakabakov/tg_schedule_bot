@@ -22,7 +22,9 @@ def admin_keyboard() -> InlineKeyboardMarkup:
         types.InlineKeyboardButton(text='👀 Список участников встречи',
                                    callback_data='Show_list'),
         types.InlineKeyboardButton(text='❌ Удалить список участников встречи',
-                                   callback_data='Delete_list')
+                                   callback_data='Delete_list'),
+        types.InlineKeyboardButton(text='Вернуться в меню',
+                                   callback_data='Menu')
     ]
     keyboard = InlineKeyboardBuilder()
     keyboard.add(*buttons_list)

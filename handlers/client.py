@@ -169,7 +169,7 @@ async def load_gmt(message: types.Message, state: FSMContext):
 
 @client_router.message(FSMClient.comment)
 async def load_comment(message: types.Message, state: FSMContext):
-    """ Save a comment and save all state in db.
+    """ Save a comment and save all states in db.
         Finish current state """
     await delete_message(message)
     await state.update_data(comment=sanitize_text(message.text))
