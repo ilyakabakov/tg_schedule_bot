@@ -14,7 +14,7 @@
 #
 In project I used: 
 - Python 3.10;
-- Aoigram framework ver. 2.25.1;
+- Aoigram framework ver. 3.3.0;
 - json;
 - Redis;
 - SQL Alchemy;
