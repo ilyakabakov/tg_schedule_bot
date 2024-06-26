@@ -1,7 +1,7 @@
 from sqlalchemy import select, delete, MetaData, Table, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
-from database.db_creating import async_engine, Client, Question, Meeting, Event
+from database.db_creating import async_engine, Client, Question, Meeting, Event, Admin
 
 AsyncSessionLocal = sessionmaker(async_engine, expire_on_commit=False, class_=AsyncSession)
 
@@ -45,12 +45,12 @@ async def new_meeting(data):
     """ Create a new row in the events table """
 
     event = Event(
-            id=1,
-            naming=data.get('naming'),
-            place=data.get('place'),
-            date=data.get('date'),
-            time=data.get('time'),
-            price=data.get('price'))
+        id=1,
+        naming=data.get('naming'),
+        place=data.get('place'),
+        date=data.get('date'),
+        time=data.get('time'),
+        price=data.get('price'))
     async with get_async_session() as a_session:
         a_session.add(event)
         await a_session.commit()
@@ -60,9 +60,9 @@ async def new_meeting_client(data):
     """ Create a new row in the meetings(event_clients) table """
 
     meeting = Meeting(
-            full_name=data.get("full_name"),
-            phone_number=data.get("phone_n")
-        )
+        full_name=data.get("full_name"),
+        phone_number=data.get("phone_n")
+    )
 
     async with get_async_session() as a_session:
         a_session.add(meeting)
@@ -159,6 +159,22 @@ async def delete_question_data(data):
         stmt = delete(Question).where(Question.question_id == int(data))
         await session.execute(stmt)
         await session.commit()
+
+
+async def get_access_to_admins_page(data):
+    """ Getting login and password from FSM data,
+    equalling it with data in table and return result"""
+
+    async with async_session() as session:
+        stmt = select(Admin).filter_by(login=data.get('username'), password=data.get('password'))
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
+        await session.close()
+
+        if user:
+            return True
+
+    return False
 
 
 async def drop_all_tables():

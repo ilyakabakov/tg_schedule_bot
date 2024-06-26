@@ -1,4 +1,4 @@
-import os
+from functools import wraps
 
 from aiogram.filters import Command, StateFilter
 
@@ -8,7 +8,7 @@ from aiogram.enums import ParseMode
 from dotenv import load_dotenv, find_dotenv
 
 from database.db_queries import new_meeting, get_clients_data, get_event_clients_data, delete_meeting_client_data, \
-    get_questions_data, delete_question_data, delete_client_data, get_client_data
+    get_questions_data, delete_question_data, delete_client_data, get_client_data, get_access_to_admins_page
 from database.json_queries import array_json
 
 from keyboards.admin_kb import admin_keyboard, back_to_admin_menu
@@ -24,6 +24,32 @@ admin_router = Router()
 admin_router.message.filter(ChatTypeFilter(['private']), IsAdmin())
 
 """ Admin authentication State Machine """
+
+authenticated_users = {}
+
+
+def authenticated_only(handler):
+    """ Custom wrapper for accessing to admins only functions """
+
+    @wraps(handler)
+    async def wrapper(*args, **kwargs):
+        if isinstance(args[0], types.Message):
+            user_id = args[0].from_user.id
+            message = args[0]
+        elif isinstance(args[0], types.CallbackQuery):
+            user_id = args[0].from_user.id
+            message = args[0].message
+        else:
+            await args[0].answer("Access denied.")
+            return
+
+        if not authenticated_users.get(user_id, False):
+            await message.answer("Access Denied.")
+            print(authenticated_users)
+            return
+        return await handler(*args, **kwargs)
+
+    return wrapper
 
 
 class Auth(StatesGroup):
@@ -53,7 +79,8 @@ async def get_password(message: types.Message, state: FSMContext):
 async def get_access(message: types.Message, state: FSMContext):
     await state.update_data(password=message.text)
     data = await state.get_data()
-    if data.get('username') == os.getenv('LOGIN') and data.get('password') == os.getenv('PASSWORD'):
+    if await get_access_to_admins_page(data):
+        authenticated_users[message.from_user.id] = True
         await state.clear()
         await message.answer(
             await array_json(
@@ -64,7 +91,7 @@ async def get_access(message: types.Message, state: FSMContext):
         )
     else:
         await state.clear()
-        await message.answer(text=f"Login: {data.get('username')} and password: {data.get('password')} incorrect.\n"
+        await message.answer(text=f"Login and password incorrect.\n"
                                   f"Permission denied")
 
 
@@ -72,6 +99,7 @@ async def get_access(message: types.Message, state: FSMContext):
 
 
 @admin_router.callback_query(F.data.startswith('del '))
+@authenticated_only
 async def del_callback_run(callback_query: types.CallbackQuery):
     """ Delete one item in clients database """
     await delete_client_data(callback_query.data.replace('del ', ''))
@@ -80,6 +108,7 @@ async def del_callback_run(callback_query: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data == 'Delete')
+@authenticated_only
 async def delete_item(callback: types.CallbackQuery):
     """ Get choice for deleting from clients db"""
 
@@ -107,15 +136,16 @@ async def delete_item(callback: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data == 'admin_menu')
+@authenticated_only
 async def admins_menu(callback: types.CallbackQuery):
     await callback.message.answer(await array_json(user="admin_content", query="admins_menu"),
                                   reply_markup=admin_keyboard())
 
 
 @admin_router.callback_query(F.data == 'Open_db')
+@authenticated_only
 async def open_all(callback: types.CallbackQuery):
     """ Open clients table """
-
     try:
         arr = await get_clients_data()
         for row in arr:
@@ -130,6 +160,7 @@ async def open_all(callback: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data == 'Open_last_client')
+@authenticated_only
 async def open_last_client(callback: types.CallbackQuery):
     """ Open last client from clients table"""
     try:
@@ -150,6 +181,7 @@ async def open_last_client(callback: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data.startswith('dlt '))
+@authenticated_only
 async def del_callback_run_q(callback_query: types.CallbackQuery):
     """ Delete one item from questions database """
     await delete_question_data(callback_query.data.replace('dlt ', ''))
@@ -158,6 +190,7 @@ async def del_callback_run_q(callback_query: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data == 'Clear_question')
+@authenticated_only
 async def delete_question(callback: types.CallbackQuery):
     """ Get choice for deleting from questions db"""
 
@@ -189,6 +222,7 @@ async def delete_question(callback: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data == 'Open_questions_db')
+@authenticated_only
 async def open_questions_db(callback: types.CallbackQuery):
     """ Get all questions from questions table """
 
@@ -220,6 +254,7 @@ class FormEvent(StatesGroup):
 
 
 @admin_router.callback_query(StateFilter(None), F.data == 'Create_event')
+@authenticated_only
 async def create_event(callback: types.CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FormEvent.naming)
     await callback.message.answer(await array_json(user='admin_content', query="meeting_naming"),
@@ -286,6 +321,7 @@ async def get_price(message: types.Message, state: FSMContext):
 
 
 @admin_router.callback_query(F.data.startswith('clr '))
+@authenticated_only
 async def del_callback_run_meet(callback_query: types.CallbackQuery):
     """ Delete one item from meeting database """
     await delete_meeting_client_data(callback_query.data.replace('clr ', ''))
@@ -294,6 +330,7 @@ async def del_callback_run_meet(callback_query: types.CallbackQuery):
 
 
 @admin_router.callback_query(F.data == 'Delete_list')
+@authenticated_only
 async def delete_meeting_clients(callback: types.CallbackQuery):
     """ Get choice for deleting from meetings db"""
 
@@ -316,7 +353,8 @@ async def delete_meeting_clients(callback: types.CallbackQuery):
         )
 
 
-@admin_router.callback_query(F.data == 'show_list')
+@admin_router.callback_query(F.data == 'Show_list')
+@authenticated_only
 async def get_meeting_client_list(callback: types.CallbackQuery):
     try:
         read = await get_event_clients_data()

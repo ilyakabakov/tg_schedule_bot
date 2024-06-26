@@ -28,6 +28,15 @@ class Client(Base):
     comment = Column(String)
 
 
+class Admin(Base):
+    """ The Admin table model """
+    __tablename__ = 'admins'
+
+    admin_id = Column(Integer, primary_key=True)
+    login = Column(String(64))
+    password = Column(String)
+
+
 class Question(Base):
     """ The Questions table model """
 
